@@ -128,6 +128,13 @@ BOOK_OI3 = "ОИ3"
 PRACTICE_EQUIP = "№3, 2а"
 
 # ============================================================
+# КОМПЕТЕНЦИИ (столбцы 6 и 7)
+# ============================================================
+# Из РП ПМ.05 (ФГОС СПО от 09.11.2023 №845)
+OK_CODES = "ОК 1 - ОК 4, ОК 9"
+PK_CODES = "ПК 5.1 - ПК 5.7"
+
+# ============================================================
 # ТЕМЫ И ЗАНЯТИЯ
 # Сумма: 52 теория + 60 практика = 112
 # Сем.3 = 36ч (Темы 2.1 + 2.2 + начало 2.3)
@@ -773,8 +780,10 @@ def generate_ktp(output_path):
             else:
                 vid = 'Урок'
             set_cell_text(t2.cell(row_idx, 4), vid, size=8, alignment=WD_ALIGN_PARAGRAPH.CENTER)
-            # col 5: ОК (пусто)
-            # col 6: ПК (пусто)
+            # col 5: ОК
+            set_cell_text(t2.cell(row_idx, 5), OK_CODES, size=6, alignment=WD_ALIGN_PARAGRAPH.CENTER)
+            # col 6: ПК
+            set_cell_text(t2.cell(row_idx, 6), PK_CODES, size=6, alignment=WD_ALIGN_PARAGRAPH.CENTER)
             # col 7: Материальное и информационное обеспечение
             set_cell_text(t2.cell(row_idx, 7), lesson.get('equipment', ''), size=8, alignment=WD_ALIGN_PARAGRAPH.CENTER)
             # col 8: Задания для студентов
