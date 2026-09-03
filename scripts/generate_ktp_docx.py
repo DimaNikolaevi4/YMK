@@ -261,13 +261,20 @@ def build_title(doc, d):
         att = {'form': d['exam_form'], 'hours': 2}
     att_form = att.get('form', '')
     att_hours = att.get('hours', '')
+    # ЧАСЫ — синхронизация с РП (см. логику в logic.md):
+    #   total_hours            — обучение по МДК (РП, табл. 3.1, кол. «Обучение по МДК, Всего»)
+    #   practical_prep_hours   — «в т.ч. в форме практической подготовки» ПО РАЗДЕЛУ МОДУЛЯ
+    #                            (РП, табл. 3.1, кол. 4 строки раздела: лаб/практ МДК + УП);
+    #                            если поле не задано — fallback на practice_hours
+    #   practice_hours         — практические занятия/лаб.работы самого МДК (РП, табл. 3.2, кол. 4)
+    prep_hours = d.get('practical_prep_hours', d['practice_hours'])
     add_fillin_p(doc, [
         ('Объем образовательной программы: ______', False),
         (str(d['total_hours']), True), ('______________ (часов);', False),
     ], style=Z1, align=L)
     add_fillin_p(doc, [
         ('в том числе в форме практической подготовки ___', False),
-        (str(d['practice_hours']), True), ('______________(часа);', False),
+        (str(prep_hours), True), ('______________(часа);', False),
     ], style=Z1, align=L)
     add_fillin_p(doc, [
         ('Учебная нагрузка во взаимодействии с преподавателем________', False),
@@ -278,6 +285,8 @@ def build_title(doc, d):
         ('теоретическое обучение __', False), (str(d['theory_hours']), True),
         ('___ (часов);                    практические занятия __', False),
         (str(d['practice_hours']), True), ('__ (часов);', False),
+        # NB: практические занятия = practice_hours (лаб/практ МДК),
+        # а НЕ practical_prep_hours (последняя включает учебную практику)
     ], style=Z1, align=L)
     add_fillin_p(doc, [
         ('лабораторные занятия ', False), (str(d.get('lab_hours', '') or ''), True),
