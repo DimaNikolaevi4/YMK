@@ -45,6 +45,21 @@ from docx.oxml import OxmlElement
 
 FONT = 'Times New Roman'
 
+
+def hour_word(n):
+    """Склонение «час» после числа: 1→час, 2–4→часа, 5–20 и десятки→часов.
+    Примеры: 8→часов, 2→часа, 60→часов, 112→часов, 22→часа, 12→часов."""
+    if n in (None, '', 0):
+        return 'часов'
+    n = int(n)
+    if n % 100 in (11, 12, 13, 14):
+        return 'часов'
+    if n % 10 == 1:
+        return 'час'
+    if n % 10 in (2, 3, 4):
+        return 'часа'
+    return 'часов'
+
 # ======================================================================
 # Утилиты низкого уровня
 # ======================================================================
@@ -261,45 +276,46 @@ def build_title(doc, d):
         att = {'form': d['exam_form'], 'hours': 2}
     att_form = att.get('form', '')
     att_hours = att.get('hours', '')
-    # ЧАСЫ — синхронизация с РП (см. логику в logic.md):
-    #   total_hours            — обучение по МДК (РП, табл. 3.1, кол. «Обучение по МДК, Всего»)
-    #   practical_prep_hours   — «в т.ч. в форме практической подготовки» ПО РАЗДЕЛУ МОДУЛЯ
-    #                            (РП, табл. 3.1, кол. 4 строки раздела: лаб/практ МДК + УП);
-    #                            если поле не задано — fallback на practice_hours
-    #   practice_hours         — практические занятия/лаб.работы самого МДК (РП, табл. 3.2, кол. 4)
-    prep_hours = d.get('practical_prep_hours', d['practice_hours'])
+    # ЧАСЫ — синхронизация с РП (решение владельца, см. logic.md 4.4):
+    # титул и Таблица 2 = строка «МДК 05.02 …» тематического плана РП (раздел 3):
+    #   total_hours      = кол. 3 строки МДК (объём МДК, для 05.02 — 112)
+    #   practice_hours   = кол. 4 строки МДК («в форме практической подготовки», 60)
+    # ЭТА цифра ставится и на титул, и в Таблицу 2.
+    # НЕ путать с 96 (= 60 лаб/практ МДК + 36 учебной практики УП.05) — это
+    # практическая подготовка раздела целиком по табл. 3.1 РП; практика планируется
+    # отдельным документом и на титул КТП по МДК не попадает.
+    # Слово «час» в скобках склоняется: 8→часов, 2→часа, 60→часов, 112→часов.
     add_fillin_p(doc, [
         ('Объем образовательной программы: ______', False),
-        (str(d['total_hours']), True), ('______________ (часов);', False),
+        (str(d['total_hours']), True), ('______________ (%s);' % hour_word(d['total_hours']), False),
     ], style=Z1, align=L)
     add_fillin_p(doc, [
         ('в том числе в форме практической подготовки ___', False),
-        (str(prep_hours), True), ('______________(часа);', False),
+        (str(d['practice_hours']), True), ('______________(%s);' % hour_word(d['practice_hours']), False),
     ], style=Z1, align=L)
     add_fillin_p(doc, [
         ('Учебная нагрузка во взаимодействии с преподавателем________', False),
-        (str(d['total_hours']), True), ('_______________ (часов):', False),
+        (str(d['total_hours']), True), ('_______________ (%s):' % hour_word(d['total_hours']), False),
     ], style=Z1, align=L)
     add_p(doc, 'из нее:', style=Z1, align=L)
     add_fillin_p(doc, [
         ('теоретическое обучение __', False), (str(d['theory_hours']), True),
-        ('___ (часов);                    практические занятия __', False),
-        (str(d['practice_hours']), True), ('__ (часов);', False),
-        # NB: практические занятия = practice_hours (лаб/практ МДК),
-        # а НЕ practical_prep_hours (последняя включает учебную практику)
+        ('___ (%s);                    практические занятия __' % hour_word(d['theory_hours']), False),
+        (str(d['practice_hours']), True), ('__ (%s);' % hour_word(d['practice_hours']), False),
     ], style=Z1, align=L)
     add_fillin_p(doc, [
         ('лабораторные занятия ', False), (str(d.get('lab_hours', '') or ''), True),
-        (' _______ (часов);                   курсовая работа/проект ', False),
-        (str(d.get('coursework_hours', '') or ''), True), (' _______ (часов);', False),
+        ('_______ (%s);                   курсовая работа/проект ' % hour_word(d.get('lab_hours')), False),
+        (str(d.get('coursework_hours', '') or ''), True), ('_______ (%s);' % hour_word(d.get('coursework_hours')), False),
     ], style=Z1, align=L)
     add_fillin_p(doc, [
         ('самостоятельная работа ', False), (str(d.get('self_hours', '') or ''), True),
-        (' _______ (часов);', False),
+        ('_______ (%s);' % hour_word(d.get('self_hours')), False),
+        (' ' * 33, False),  # хвостовое выравнивание как в эталоне
     ], style=Z1, align=L)
     add_fillin_p(doc, [
         ('промежуточная аттестация в форме __ ', False),
-        (att_form, True), ('   _', False), (str(att_hours), True), ('__(часов).', False),
+        (att_form, True), ('   _', False), (str(att_hours), True), ('__(%s).' % hour_word(att_hours), False),
     ], style=Z1, align=L)
     add_p(doc, ' ' * 84 + '(указать форму)', style=Z1, align=L)
     add_p(doc, '')

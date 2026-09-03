@@ -170,24 +170,35 @@ def main():
               f'{th}+{data["practice_hours"]}+{att_h} != {data["total_hours"]}'
               if th + data['practice_hours'] + att_h != data['total_hours'] else f'{th}+{data["practice_hours"]}+{att_h}')
 
-        # 7г-7д. Титул: часы практической подготовки (сверка с РП 3.1/3.2)
+        # 7г-7е. Титул: часы (источник — кол. 3/4 строки МДК тематического плана РП)
         title = '\n'.join(p.text for p in doc.paragraphs)
-        m = re.search(r'Объем образовательной программы:\s*_{0,20}(\d+)_{0,20}\s*\(часов\)', title)
-        check('7г. Титул: объём образовательной программы = total_hours',
+        m = re.search(r'Объем образовательной программы:\s*_{0,20}(\d+)_{0,20}\s*\((час\w*)\)', title)
+        check('7г. Титул: объём образовательной программы = total_hours (кол. 3 строки МДК РП)',
               bool(m) and int(m.group(1)) == data['total_hours'],
               (m.group(1) if m else 'строка не найдена') + f' != {data["total_hours"]}'
               if not m or int(m.group(1)) != data['total_hours'] else f'{data["total_hours"]} ч')
-        prep = data.get('practical_prep_hours', data['practice_hours'])
-        m2 = re.search(r'в том числе в форме практической подготовки\s*_{0,20}(\d+)_{0,20}\s*\(часа\)', title)
-        check('7д. Титул: «в т.ч. в форме практической подготовки» = practical_prep_hours (по РП, табл. 3.1, строка раздела)',
-              bool(m2) and int(m2.group(1)) == prep,
-              (m2.group(1) if m2 else 'строка не найдена') + f' != {prep}'
-              if not m2 or int(m2.group(1)) != prep else f'{prep} ч (= {data["practice_hours"]} лаб/практ МДК + практика раздела)')
-        # 7е. Формула практической подготовки: 96 = 60 + 36 (лаб/практ МДК + УП раздела)
-        check('7е. practical_prep_hours >= practice_hours (практ. подготовка включает лаб/практ МДК)',
-              prep >= data['practice_hours'],
-              f'{prep} < {data["practice_hours"]}' if prep < data['practice_hours']
-              else f'{prep} ч ≥ {data["practice_hours"]} ч')
+        m2 = re.search(r'в том числе в форме практической подготовки\s*_{0,20}(\d+)_{0,20}\s*\((час\w*)\)', title)
+        check('7д. Титул: «в т.ч. в форме практической подготовки» = practice_hours (кол. 4 строки МДК РП)',
+              bool(m2) and int(m2.group(1)) == data['practice_hours'],
+              (m2.group(1) if m2 else 'строка не найдена') + f' != {data["practice_hours"]}'
+              if not m2 or int(m2.group(1)) != data['practice_hours'] else f'{data["practice_hours"]} ч')
+        # 7е. Склонение «час» в титуле: 1→час, 2-4→часа, 5-20→часов (8→часов, 2→часа)
+        def hour_word(n):
+            if n in (None, '', 0):
+                return 'часов'
+            n = int(n)
+            if n % 100 in (11, 12, 13, 14):
+                return 'часов'
+            if n % 10 == 1:
+                return 'час'
+            if n % 10 in (2, 3, 4):
+                return 'часа'
+            return 'часов'
+        pairs = re.findall(r'(\d+)\s*_*\s*\((часа|часов|час)\)', title)
+        bad_decl = [(n, w) for n, w in pairs if hour_word(int(n)) != w]
+        check('7е. Склонение слова «час» в титуле соответствует числам (8→часов, 2→часа)',
+              len(pairs) >= 3 and not bad_decl,
+              f'несогласованы: {bad_decl}' if bad_decl else f'{len(pairs)} строк ✓')
 
         # 8. Сквозная нумерация
         ok = nums == list(range(1, len(nums) + 1))
