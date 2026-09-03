@@ -127,9 +127,9 @@ def main():
             c1 = t2.cell(ri, 1).text.strip()
             if c1.startswith('Итого'):
                 break
-            m_theme = re.match(r'Тема\s*2\.(\d)', c1)
+            m_theme = re.match(r'Тема\s*(\d+\.\d)', c1)
             if m_theme:
-                cur_theme = '2.' + m_theme.group(1)
+                cur_theme = m_theme.group(1)
             if not c0:
                 # строка-заголовок темы: кол.4 = плановая практика темы (по РП 3.2)
                 if m_theme:
@@ -221,7 +221,8 @@ def main():
         for ri in range(1, len(tables[4].rows)):
             pub = tables[4].cell(ri, 3).text
             y = year_of(pub)
-            if y and y < args.year - 5 + 1:  # издано ранее 2021 (для 2026)
+            if y and y < args.year - 5:  # старше 5 лет = издано ДО 2021 (для 2026);
+                # 2021+ — свежие (KTP_INSTRUCTIONS.md, раздел 3)
                 oi_bad.append((tables[4].cell(ri, 0).text.strip(), y))
         check('10а. В ОИ нет книг старше 5 лет', not oi_bad, str(oi_bad) if oi_bad else '')
 
