@@ -121,18 +121,28 @@ def main():
         # 7. Суммы часов
         nums, sum_h, sum_p = [], 0, 0
         att_rows = []
+        theme_hdr, theme_sum, cur_theme = {}, {}, None  # построчная сверка с РП 3.2 (контрольные суммы)
         for ri in range(4, len(t2.rows)):
             c0 = t2.cell(ri, 0).text.strip()
             c1 = t2.cell(ri, 1).text.strip()
             if c1.startswith('Итого'):
                 break
+            m_theme = re.match(r'Тема\s*2\.(\d)', c1)
+            if m_theme:
+                cur_theme = '2.' + m_theme.group(1)
             if not c0:
+                # строка-заголовок темы: кол.4 = плановая практика темы (по РП 3.2)
+                if m_theme:
+                    p_hdr = t2.cell(ri, 3).text.strip()
+                    theme_hdr[cur_theme] = int(p_hdr) if p_hdr else 0
                 continue
             nums.append(int(c0))
             h = t2.cell(ri, 2).text.strip()
             p = t2.cell(ri, 3).text.strip()
             sum_h += int(h) if h else 0
             sum_p += int(p) if p else 0
+            if cur_theme:
+                theme_sum[cur_theme] = theme_sum.get(cur_theme, 0) + (int(p) if p else 0)
             if 'зачет' in c1.lower() or 'зачёт' in c1.lower() or 'экзамен' in c1.lower():
                 att_rows.append((ri, c1, h, p,
                                  t2.cell(ri, 4).text.strip(), t2.cell(ri, 5).text.strip(),
@@ -140,8 +150,19 @@ def main():
                                  t2.cell(ri, 8).text.strip(), t2.cell(ri, 9).text.strip()))
         check('7а. Σ часов занятий = общему объёму МДК',
               sum_h == data['total_hours'], f'{sum_h} != {data["total_hours"]}' if sum_h != data['total_hours'] else f'{sum_h} ч')
-        check('7б. Σ практики = плановой практической подготовке',
+        check('7б. Σ практики (строки занятий) = практике МДК по РП, табл. 3.2',
               sum_p == data['practice_hours'], f'{sum_p} != {data["practice_hours"]}' if sum_p != data['practice_hours'] else f'{sum_p} ч')
+        # 7ж/7з — построчные контрольные суммы (перенос из РП 3.2):
+        bad_themes = {k: (theme_hdr.get(k, 0), theme_sum.get(k, 0))
+                      for k in set(theme_hdr) | set(theme_sum)
+                      if theme_hdr.get(k, 0) != theme_sum.get(k, 0)}
+        check('7ж. По КАЖДОЙ теме: Σ практики занятий = значению заголовка темы (построчный перенос из РП 3.2)',
+              bool(theme_hdr) and not bad_themes,
+              f'несходятся: {bad_themes}' if bad_themes else f'{len(theme_hdr)} тем ✓')
+        check('7з. Σ кол.4 заголовков тем = практике МДК (дублирует Σ по занятиям)',
+              sum(theme_hdr.values()) == data['practice_hours'],
+              f'{sum(theme_hdr.values())} != {data["practice_hours"]}'
+              if sum(theme_hdr.values()) != data['practice_hours'] else f'{sum(theme_hdr.values())} ч')
         th = data.get('theory_hours', 0)
         att_h = data.get('attestation', {}).get('hours', 0)
         check('7в. Теория + практика + аттестация = общий объём',
