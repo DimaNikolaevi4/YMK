@@ -175,6 +175,25 @@ def fix_widths(table, widths):
             pos += gs
 
 
+def set_tr_heights(table, heights):
+    """Высоты строк (twips, atLeast — как в эталоне).
+    heights: список по строкам ЛИБО dict {индекс: val} (пропущенные — без высоты)."""
+    for i, row in enumerate(table.rows):
+        val = heights[i] if isinstance(heights, (list, tuple)) else heights.get(i)
+        if val is None:
+            continue
+        tr = row._tr
+        trPr = tr.find(qn('w:trPr'))
+        if trPr is None:
+            trPr = OxmlElement('w:trPr')
+            tr.insert(0, trPr)
+        th = trPr.find(qn('w:trHeight'))
+        if th is None:
+            th = OxmlElement('w:trHeight')
+            trPr.append(th)
+        th.set(qn('w:val'), str(val))
+
+
 def _num(v):
     """'-'/''/None -> 0, иначе int."""
     if v in (None, '', '-'):
@@ -348,8 +367,16 @@ def build_table1(doc, d):
     add_p(doc, 'Таблица 1', align=WD_ALIGN_PARAGRAPH.RIGHT)
 
     sems = d.get('table1_semesters', [])
-    reserve = max(0, 12 - 5 - len(sems) - 2)
-    total_rows = 5 + len(sems) + reserve + 2  # шапка(4)+номера + семестры + резерв + Практика + Всего
+    # Аттестация по МДК (КДЗ) — отдельной строкой ПОСЛЕ резервных строк
+    # (по образцу эталона 05.02: «Компл. дифф. зачет», часы в графе 6,
+    #  остальные графы пустые). КДЗ входит в ОБЪЁМ последнего семестра.
+    att = d.get('attestation', {})
+    if not att and d.get('exam_form'):
+        att = {'form': d['exam_form'], 'hours': 2}
+    att_hours = _num(att.get('hours', 0))
+    has_att_row = att_hours > 0
+    reserve = max(0, 12 - 5 - len(sems) - (3 if has_att_row else 2))
+    total_rows = 5 + len(sems) + reserve + (3 if has_att_row else 2)  # шапка(4)+номера + семестры + резерв + [КДЗ] + Практика + Всего
     t = new_table(doc, total_rows, 12, T1_WIDTHS)
 
     # --- Шапка: вертикальные объединения ---
@@ -413,17 +440,21 @@ def build_table1(doc, d):
             cell_text(t.cell(ri, c), '', align=H)
         ri += 1
 
+    # --- Строка «Компл. дифф. зачет» (по образцу эталона: часы в графе 6, остальные пустые) ---
+    if has_att_row:
+        row = ['Компл. дифф. зачет'] + [''] * 4 + [str(att_hours)] + [''] * 6
+        for c, v in enumerate(row):
+            cell_text(t.cell(ri, c), v, bold=True, align=H)
+        ri += 1
+
     # --- Строка «Практика» ---
     row = ['Практика'] + ['-'] * 11
     for c, v in enumerate(row):
         cell_text(t.cell(ri, c), v, bold=True, align=H)
     ri += 1
 
-    # --- Строка «Всего» (теория включает часы промежуточной аттестации, как в эталоне) ---
-    att = d.get('attestation', {})
-    if not att and d.get('exam_form'):
-        att = {'form': d['exam_form'], 'hours': 2}
-    att_hours = _num(att.get('hours', 0))
+    # --- Строка «Всего» (графа «Теоретические занятия» = Σ семестров + КДЗ;
+    #     объём последнего семестра УЖЕ включает КДЗ — правило данных) ---
     sums = {k: sum(_num(s.get(k, '-')) for s in sems)
             for k in ('total', 'with_teacher', 'theory', 'lab', 'practice',
                       'coursework', 'self', 'uch_practice', 'proizv_practice')}
@@ -436,6 +467,10 @@ def build_table1(doc, d):
     for c, v in enumerate(row):
         cell_text(t.cell(ri, c), v, bold=True, align=H)
 
+    # Высоты строк по эталону: строка 0 — без высоты; шапка 219/234/1758;
+    # номерная 237; данные (семестры/резерв/КДЗ/Практика/Всего) — 215
+    set_tr_heights(t, {1: 219, 2: 234, 3: 1758, 4: 237,
+                       **{i: 215 for i in range(5, total_rows)}})
     fix_widths(t, T1_WIDTHS)
 
     # --- Подпись под Таблицей 1 (строго по эталону) ---
@@ -536,6 +571,8 @@ def build_table2(doc, d):
     cell_text(t.cell(ri, 2), str(d['total_hours']), bold=True, align=C)
     cell_text(t.cell(ri, 3), str(d['practice_hours']), bold=True, align=C)
 
+    # Высоты строк по эталону: шапка 20/230/1695, все остальные — 20
+    set_tr_heights(t, [20, 230, 1695] + [20] * (n_rows - 3))
     fix_widths(t, T2_WIDTHS)
 
 

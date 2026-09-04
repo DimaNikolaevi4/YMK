@@ -244,6 +244,65 @@ def main():
         bad_fonts = {f for f in run_fonts if 'Times' not in f}
         check('11б. Весь видимый текст Times New Roman', not bad_fonts, str(bad_fonts))
 
+        # 12. Таблица 1 и высоты строк (по исправленному образцу эталона 05.02)
+        # 12а. Строка «Компл. дифф. зачет»: часы в графе 6, остальные графы пустые
+        att_t1 = None
+        for ri in range(4, len(t1.rows)):
+            c0 = t1.cell(ri, 0).text.strip()
+            if c0.lower().startswith('компл'):
+                att_t1 = [t1.cell(ri, c).text.strip() for c in range(12)]
+                break
+        ok = (att_t1 is not None
+              and att_t1[0].lower().startswith('компл')
+              and att_t1[5] == str(data.get('attestation', {}).get('hours', 2))
+              and all(att_t1[c] == '' for c in (1, 2, 3, 4, 6, 7, 8, 9, 10, 11)))
+        check('12а. Т1: строка «Компл. дифф. зачет» — часы в графе 6, остальные графы пусты (эталон)',
+              ok, str(att_t1) if not ok else '')
+        # 12б. Суммы Т1: Σ объёмов семестров = Всего (КДЗ внутри последнего семестра);
+        #      графа «Теоретические занятия» Всего = Σ теорий семестров + КДЗ; практика = РП
+        if att_t1 is not None:
+            sems_t1 = []
+            for ri in range(5, len(t1.rows)):
+                c0 = t1.cell(ri, 0).text.strip()
+                if c0 == 'МДК ' + data['mdk_code']:
+                    sems_t1.append([t1.cell(ri, c).text.strip() for c in range(12)])
+            tot_row = None
+            for ri in range(len(t1.rows) - 1, 4, -1):
+                if t1.cell(ri, 0).text.strip() == 'Всего':
+                    tot_row = [t1.cell(ri, c).text.strip() for c in range(12)]
+                    break
+            att_h = data.get('attestation', {}).get('hours', 0)
+            ok_tot = (sum(int(r[3]) for r in sems_t1) == data['total_hours']
+                      and tot_row is not None and int(tot_row[3]) == data['total_hours'])
+            check('12б-1. Т1: Σ объёмов семестров = Всего = total_hours (КДЗ внутри последнего семестра)',
+                  ok_tot, f'семестры {[r[3] for r in sems_t1]} vs {tot_row[3] if tot_row else "-"}')
+            ok_th = tot_row is not None and int(tot_row[5]) == (
+                sum(int(r[5]) for r in sems_t1) + att_h)
+            check('12б-2. Т1: теория Всего = Σ теорий семестров + КДЗ',
+                  ok_th, f'{tot_row[5] if tot_row else "-"} != {sum(int(r[5]) for r in sems_t1)}+{att_h}'
+                  if not ok_th else '')
+            ok_pr = tot_row is not None and int(tot_row[7]) == data['practice_hours']
+            check('12б-3. Т1: практика Всего = практике МДК по РП', ok_pr,
+                  f'{tot_row[7] if tot_row else "-"} != {data["practice_hours"]}' if not ok_pr else '')
+        # 12в. Высоты строк: Т2 — шапка 20/230/1695, все строки с trHeight;
+        #      Т1 — шапка 219/234/1758, номерная 237, данные 215
+        def tr_heights(tbl):
+            out = []
+            for tr in tbl._tbl.findall(W + 'tr'):
+                th = tr.find(W + 'trPr/' + W + 'trHeight')
+                out.append(th.get(W + 'val') if th is not None else None)
+            return out
+        h2 = tr_heights(t2)
+        ok = (len(h2) >= 4 and h2[0] == '20' and h2[1] == '230' and h2[2] == '1695'
+              and all(v is not None for v in h2))
+        check('12в-1. Т2: высоты строк по эталону (20/230/1695, все строки заданы)',
+              ok, f'первые 4: {h2[:4]}, без высоты: {[i for i, v in enumerate(h2) if v is None][:5]}')
+        h1 = tr_heights(t1)
+        ok = (len(h1) >= 12 and h1[1] == '219' and h1[2] == '234' and h1[3] == '1758'
+              and h1[4] == '237' and all(v == '215' for v in h1[5:] if v is not None))
+        check('12в-2. Т1: высоты строк по эталону (219/234/1758/237, данные 215)',
+              ok, f'первые 6: {h1[:6]}')
+
     # Итог
     print('=' * 72)
     failed = 0
