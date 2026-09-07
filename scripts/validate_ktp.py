@@ -258,7 +258,7 @@ def main():
               and all(att_t1[c] == '' for c in (1, 2, 3, 4, 6, 7, 8, 9, 10, 11)))
         check('12а. Т1: строка «Компл. дифф. зачет» — часы в графе 6, остальные графы пусты (эталон)',
               ok, str(att_t1) if not ok else '')
-        # 12б. Суммы Т1: Σ объёмов семестров = Всего (КДЗ внутри последнего семестра);
+        # 12б. Суммы Т1: Σ объёмов семестров = Всего (КДЗ внутри семестра проведения);
         #      графа «Теоретические занятия» Всего = Σ теорий семестров + КДЗ; практика = РП
         if att_t1 is not None:
             sems_t1 = []
@@ -274,7 +274,7 @@ def main():
             att_h = data.get('attestation', {}).get('hours', 0)
             ok_tot = (sum(int(r[3]) for r in sems_t1) == data['total_hours']
                       and tot_row is not None and int(tot_row[3]) == data['total_hours'])
-            check('12б-1. Т1: Σ объёмов семестров = Всего = total_hours (КДЗ внутри последнего семестра)',
+            check('12б-1. Т1: Σ объёмов семестров = Всего = total_hours (КДЗ внутри семестра проведения)',
                   ok_tot, f'семестры {[r[3] for r in sems_t1]} vs {tot_row[3] if tot_row else "-"}')
             ok_th = tot_row is not None and int(tot_row[5]) == (
                 sum(int(r[5]) for r in sems_t1) + att_h)
@@ -284,6 +284,17 @@ def main():
             ok_pr = tot_row is not None and int(tot_row[7]) == data['practice_hours']
             check('12б-3. Т1: практика Всего = практике МДК по РП', ok_pr,
                   f'{tot_row[7] if tot_row else "-"} != {data["practice_hours"]}' if not ok_pr else '')
+            # 12б-4. Посеместровая арифметика: объём семестра проведения КДЗ = теория + практ + КДЗ;
+            #        для остальных семестров объём = теория + практ (ловит разрыв «16+48 ≠ 66»)
+            kdz_sem = str(data.get('kdz_semester', sems_t1[-1][2] if sems_t1 else ''))
+            bad = []
+            for r in sems_t1:
+                th, pr = int(r[5]) if r[5].isdigit() else 0, int(r[7]) if r[7].isdigit() else 0
+                kdz = att_h if r[2] == kdz_sem else 0
+                if int(r[3]) != th + pr + kdz:
+                    bad.append(f'c.{r[2]}: {r[3]} != {th}+{pr}+{kdz}')
+            check('12б-4. Т1: объём каждого семестра = теория + практ (+ КДЗ в семестре проведения)',
+                  not bad, '; '.join(bad))
         # 12в. Высоты строк: Т2 — шапка 20/230/1695, все строки с trHeight;
         #      Т1 — шапка 219/234/1758, номерная 237, данные 215
         def tr_heights(tbl):
