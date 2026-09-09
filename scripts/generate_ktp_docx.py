@@ -310,7 +310,8 @@ def build_title(doc, d):
     ], style=Z1, align=L)
     add_fillin_p(doc, [
         ('в том числе в форме практической подготовки ___', False),
-        (str(d['practice_hours']), True), ('______________(%s);' % hour_word(d['practice_hours']), False),
+        (str(d.get('practical_prep_hours', d['practice_hours'])), True),
+        ('______________(%s);' % hour_word(d.get('practical_prep_hours', d['practice_hours'])), False),
     ], style=Z1, align=L)
     add_fillin_p(doc, [
         ('Учебная нагрузка во взаимодействии с преподавателем________', False),
@@ -442,9 +443,10 @@ def build_table1(doc, d):
             cell_text(t.cell(ri, c), '', align=H)
         ri += 1
 
-    # --- Строка «Компл. дифф. зачет» (по образцу эталона: часы в графе 6, остальные пустые) ---
+    # --- Строка «Компл./Дифф. зачет» (по образцу эталона: часы в графе 6, остальные пустые) ---
     if has_att_row:
-        row = ['Компл. дифф. зачет'] + [''] * 4 + [str(att_hours)] + [''] * 6
+        att_t1_row = att.get('t1_row', 'Компл. дифф. зачет')
+        row = [att_t1_row] + [''] * 4 + [str(att_hours)] + [''] * 6
         for c, v in enumerate(row):
             cell_text(t.cell(ri, c), v, bold=True, align=H)
         ri += 1
@@ -530,11 +532,12 @@ def build_table2(doc, d):
         cell_text(t.cell(3, c), str(c + 1), bold=False, align=C)
 
     ri = 4
-    # --- Строка МДК ---
+    # --- Строка МДК (кол.4 = практ.подготовка по РП 3.2: practical_prep_hours) ---
+    prep_h = d.get('practical_prep_hours', d['practice_hours'])
     cell_text(t.cell(ri, 1), 'МДК %s   %s' % (d['mdk_code'], d['mdk_name']),
               bold=True, align=L)
     cell_text(t.cell(ri, 2), str(d['total_hours']), bold=True, align=C)
-    cell_text(t.cell(ri, 3), str(d['practice_hours']), bold=True, align=C)
+    cell_text(t.cell(ri, 3), str(prep_h), bold=True, align=C)
     cell_text(t.cell(ri, 10), d.get('teacher_name', ''), bold=False, align=C)
     ri += 1
 
@@ -560,18 +563,20 @@ def build_table2(doc, d):
             ri += 1
 
     # --- Строка промежуточной аттестации (строго по эталону:
-    #     номер, название, 2 часа; ОК/ПК/вид/обеспечение/задания/контроль — ПУСТО) ---
+    #     номер, название, часы (или пусто, если часы ДЗ не встречаются
+    #     построчно в РП 3.2, как в 15.01.31); графы 5-10 — ПУСТО) ---
     if has_att:
         row_name = att.get('row_name', att['form'])
+        h2 = att.get('t2_hours', att.get('hours', 2))
         cell_text(t.cell(ri, 0), str(n_lessons + 1), bold=False, align=C)
         cell_text(t.cell(ri, 1), row_name, bold=True, align=L)
-        cell_text(t.cell(ri, 2), str(att.get('hours', 2)), bold=True, align=C)
+        cell_text(t.cell(ri, 2), str(h2) if h2 else '', bold=True, align=C)
         ri += 1
 
-    # --- Строка «Итого» ---
+    # --- Строка «Итого» (кол.4 = практ.подготовка по РП 3.2) ---
     cell_text(t.cell(ri, 1), 'Итого:', bold=True, align=L)
     cell_text(t.cell(ri, 2), str(d['total_hours']), bold=True, align=C)
-    cell_text(t.cell(ri, 3), str(d['practice_hours']), bold=True, align=C)
+    cell_text(t.cell(ri, 3), str(d.get('practical_prep_hours', d['practice_hours'])), bold=True, align=C)
 
     # Высоты строк по эталону: шапка 20/230/1695, все остальные — 20
     set_tr_heights(t, [20, 230, 1695] + [20] * (n_rows - 3))

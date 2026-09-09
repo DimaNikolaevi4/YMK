@@ -151,7 +151,8 @@ def main():
         check('7а. Σ часов занятий = общему объёму МДК',
               sum_h == data['total_hours'], f'{sum_h} != {data["total_hours"]}' if sum_h != data['total_hours'] else f'{sum_h} ч')
         check('7б. Σ практики (строки занятий) = практике МДК по РП, табл. 3.2',
-              sum_p == data['practice_hours'], f'{sum_p} != {data["practice_hours"]}' if sum_p != data['practice_hours'] else f'{sum_p} ч')
+              sum_p == data.get('practical_prep_hours', data['practice_hours']),
+              f'{sum_p} != {data.get("practical_prep_hours", data["practice_hours"])}' if sum_p != data.get('practical_prep_hours', data['practice_hours']) else f'{sum_p} ч')
         # 7ж/7з — построчные контрольные суммы (перенос из РП 3.2):
         bad_themes = {k: (theme_hdr.get(k, 0), theme_sum.get(k, 0))
                       for k in set(theme_hdr) | set(theme_sum)
@@ -159,10 +160,10 @@ def main():
         check('7ж. По КАЖДОЙ теме: Σ практики занятий = значению заголовка темы (построчный перенос из РП 3.2)',
               bool(theme_hdr) and not bad_themes,
               f'несходятся: {bad_themes}' if bad_themes else f'{len(theme_hdr)} тем ✓')
-        check('7з. Σ кол.4 заголовков тем = практике МДК (дублирует Σ по занятиям)',
-              sum(theme_hdr.values()) == data['practice_hours'],
-              f'{sum(theme_hdr.values())} != {data["practice_hours"]}'
-              if sum(theme_hdr.values()) != data['practice_hours'] else f'{sum(theme_hdr.values())} ч')
+        check('7з. Σ кол.4 заголовков тем = практ.подготовке МДК (дублирует Σ по занятиям)',
+              sum(theme_hdr.values()) == data.get('practical_prep_hours', data['practice_hours']),
+              f'{sum(theme_hdr.values())} != {data.get("practical_prep_hours", data["practice_hours"])}'
+              if sum(theme_hdr.values()) != data.get('practical_prep_hours', data['practice_hours']) else f'{sum(theme_hdr.values())} ч')
         th = data.get('theory_hours', 0)
         att_h = data.get('attestation', {}).get('hours', 0)
         check('7в. Теория + практика + аттестация = общий объём',
@@ -178,10 +179,11 @@ def main():
               (m.group(1) if m else 'строка не найдена') + f' != {data["total_hours"]}'
               if not m or int(m.group(1)) != data['total_hours'] else f'{data["total_hours"]} ч')
         m2 = re.search(r'в том числе в форме практической подготовки\s*_{0,20}(\d+)_{0,20}\s*\((час\w*)\)', title)
-        check('7д. Титул: «в т.ч. в форме практической подготовки» = practice_hours (кол. 4 строки МДК РП)',
-              bool(m2) and int(m2.group(1)) == data['practice_hours'],
-              (m2.group(1) if m2 else 'строка не найдена') + f' != {data["practice_hours"]}'
-              if not m2 or int(m2.group(1)) != data['practice_hours'] else f'{data["practice_hours"]} ч')
+        prep_hours = data.get('practical_prep_hours', data['practice_hours'])
+        check('7д. Титул: «в т.ч. в форме практической подготовки» = практ.подготовке МДК (кол. 4 строки МДК РП)',
+              bool(m2) and int(m2.group(1)) == prep_hours,
+              (m2.group(1) if m2 else 'строка не найдена') + f' != {prep_hours}'
+              if not m2 or int(m2.group(1)) != prep_hours else f'{prep_hours} ч')
         # 7е. Склонение «час» в титуле: 1→час, 2-4→часа, 5-20→часов (8→часов, 2→часа)
         def hour_word(n):
             if n in (None, '', 0):
@@ -249,14 +251,14 @@ def main():
         att_t1 = None
         for ri in range(4, len(t1.rows)):
             c0 = t1.cell(ri, 0).text.strip()
-            if c0.lower().startswith('компл'):
+            if c0.lower().startswith(('компл', 'дифф')):
                 att_t1 = [t1.cell(ri, c).text.strip() for c in range(12)]
                 break
         ok = (att_t1 is not None
-              and att_t1[0].lower().startswith('компл')
+              and att_t1[0].lower().startswith(('компл', 'дифф'))
               and att_t1[5] == str(data.get('attestation', {}).get('hours', 2))
               and all(att_t1[c] == '' for c in (1, 2, 3, 4, 6, 7, 8, 9, 10, 11)))
-        check('12а. Т1: строка «Компл. дифф. зачет» — часы в графе 6, остальные графы пусты (эталон)',
+        check('12а. Т1: строка «Компл./Дифф. зачет» — часы в графе 6, остальные графы пусты (эталон)',
               ok, str(att_t1) if not ok else '')
         # 12б. Суммы Т1: Σ объёмов семестров = Всего (КДЗ внутри семестра проведения);
         #      графа «Теоретические занятия» Всего = Σ теорий семестров + КДЗ; практика = РП
