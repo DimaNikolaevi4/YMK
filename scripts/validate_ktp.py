@@ -136,7 +136,12 @@ def main():
                     p_hdr = t2.cell(ri, 3).text.strip()
                     theme_hdr[cur_theme] = int(p_hdr) if p_hdr else 0
                 continue
-            nums.append(int(c0))
+            m_num = re.match(r'^(\d+)\s*[-–]\s*(\d+)$', c0)
+            if m_num:
+                # объединённая строка владельца: диапазон «31 -32» = пара занятий в одной строке
+                nums.extend([int(m_num.group(1)), int(m_num.group(2))])
+            else:
+                nums.append(int(c0))
             h = t2.cell(ri, 2).text.strip()
             p = t2.cell(ri, 3).text.strip()
             sum_h += int(h) if h else 0
