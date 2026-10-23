@@ -915,5 +915,5 @@ def generate_ktp(output_path):
 
 
 if __name__ == '__main__':
-    output = '/home/z/my-project/YMK/KTP/МДК_05_02_КТП.docx'
+    output = '/home/z/my-project/YMK/KTP/КТП МДК 05.02 М 2 курс.docx'  # Обновлено 2026-10-23
     generate_ktp(output)

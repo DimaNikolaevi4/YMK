@@ -5,7 +5,7 @@ import json
 import re
 from docx import Document
 
-SRC = "/home/z/my-project/YMK/KTP/КТП МДК 05.02 М2 курс.docx"
+SRC = "/home/z/my-project/YMK/KTP/КТП МДК 05.02 М 2 курс.docx"  # Обновлено 2026-10-23 (было 'М2 курс.docx' без пробела)
 OUT = "/home/z/my-project/YMK/scripts/data_05_02_example.json"
 
 doc = Document(SRC)

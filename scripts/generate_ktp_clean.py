@@ -6,7 +6,8 @@ from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 import json
 
-DST = '/home/z/my-project/YMK/KTP/МДК_05_02_КТП.docx'
+# Обновлено 2026-10-23: имя КТП после чистки KTP/ пользователем
+DST = '/home/z/my-project/YMK/KTP/КТП МДК 05.02 М 2 курс.docx'  # было 'МДК_05_02_КТП.docx'
 
 # ========== LOAD DATA ==========
 with open('/tmp/table2_data.json', 'r', encoding='utf-8') as f:

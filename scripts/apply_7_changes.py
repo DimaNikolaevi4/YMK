@@ -7,8 +7,9 @@ from copy import deepcopy
 import lxml.etree as ET
 import re, sys
 
-DOC_PATH = '/home/z/my-project/YMK/KTP/МДК_05_02_КТП.docx'
-USER_PATH = '/home/z/my-project/YMK/KTP/КТП МДК 05.02 М2 курс.docx'
+# Обновлено 2026-10-23: пути к КТП после чистки KTP/ пользователем
+DOC_PATH = '/home/z/my-project/YMK/KTP/КТП МДК 05.02 М 2 курс.docx'  # было 'МДК_05_02_КТП.docx'
+USER_PATH = '/home/z/my-project/YMK/KTP/КТП МДК 05.02 М 2 курс.docx'  # было 'М2 курс.docx' без пробела
 
 doc = Document(DOC_PATH)
 user_doc = Document(USER_PATH)

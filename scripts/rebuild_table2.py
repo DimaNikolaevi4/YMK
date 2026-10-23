@@ -7,8 +7,9 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml.table import CT_Tbl
 import copy
 
-SRC = '/home/z/my-project/YMK/KTP/МДК_05_02_КТП.docx'
-DST = '/home/z/my-project/YMK/KTP/МДК_05_02_КТП.docx'
+# Обновлено 2026-10-23: пути к КТП после чистки KTP/ пользователем
+SRC = '/home/z/my-project/YMK/KTP/КТП МДК 05.02 М 2 курс.docx'  # было 'МДК_05_02_КТП.docx'
+DST = '/home/z/my-project/YMK/KTP/КТП МДК 05.02 М 2 курс.docx'  # было 'МДК_05_02_КТП.docx'
 
 # Reference column widths (EMU) from the sample
 COL_WIDTHS = [

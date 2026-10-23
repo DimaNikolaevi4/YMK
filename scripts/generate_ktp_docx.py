@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 """
 Генератор КТП в формате DOCX — СТРОГО по единственному эталону проекта:
-KTP/КТП МДК 05.02 М2 курс.docx
+KTP/КТП МДК 05.02 М 2 курс.docx
 
 Использование:
-    python3 scripts/generate_ktp_docx.py --data data.json --output "KTP/КТП МДК 05.02 М2 курс.docx"
+    python3 scripts/generate_ktp_docx.py --data data.json --output "KTP/КТП МДК 05.02 М 2 курс.docx"
 
 Структура документа (7 таблиц, как в эталоне):
   1. Титульный лист (министерство, УТВЕРЖДАЮ, шапка КТП, часы, цикловая комиссия)

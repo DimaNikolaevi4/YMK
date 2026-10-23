@@ -6,7 +6,7 @@
 1) Т1 с.4: теория 16 -> 18 (арифметика владельца не билась: 16+48=64 != 66;
    согласовано с оригиналом КТП, нагрузкой (с.4 = 66 в т.ч. 48) и «Всего теория 56»);
 2) Т2: trHeight по эталону (шапка 20/230/1695, тело 20) — как в Task 12.
-Результат -> KTP/КТП МДК 01.02 М-21.docx + копия в download/."""
+Результат -> KTP/КТП МДК 01.02 М 2 курс.docx + копия в download/."""
 import zipfile, shutil, os
 from xml.etree import ElementTree as ET
 
@@ -100,8 +100,8 @@ with zipfile.ZipFile(DST, 'w', zipfile.ZIP_DEFLATED) as z:
 print('Сохранено:', DST)
 
 os.makedirs('/home/z/my-project/download', exist_ok=True)
-shutil.copy(DST, '/home/z/my-project/download/КТП МДК 01.02 М-21.docx')
-print('Копия: /home/z/my-project/download/КТП МДК 01.02 М-21.docx')
+shutil.copy(DST, '/home/z/my-project/download/КТП МДК 01.02 М 2 курс.docx')
+print('Копия: /home/z/my-project/download/КТП МДК 01.02 М 2 курс.docx')
 
 # ---------- контроль: перечитать итог ----------
 sys_path = '/home/z/my-project/YMK/scripts'

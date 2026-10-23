@@ -5,7 +5,8 @@ sys.path.insert(0, '/home/z/my-project/YMK/scripts')
 from extract_ktp_hours import doc_text_and_tables, flat
 
 BASE = '/home/z/my-project/YMK'
-for f in ['KTP/КТП МДК 02.01 С-21.docx', 'KTP/КТП МДК 02.02 С-21.docx']:
+# Обновлено 2026-10-23: С-21 и С-22 объединены в 'С-21-22 2 курс.docx'
+for f in ['KTP/КТП МДК 02.01 С-21-22 2 курс.docx', 'KTP/КТП МДК 02.02 С-21-22 2 курс.docx']:
     p = f'{BASE}/{f}'
     print('=' * 100)
     print(f)
