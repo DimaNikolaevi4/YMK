@@ -12,8 +12,10 @@ from xml.etree import ElementTree as ET
 
 W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
 NS = {'w': W}
-SRC = '/home/z/my-project/YMK/KTP/гот/КТП МДК 01.02 М 2 курс.docx'
-DST = '/home/z/my-project/YMK/KTP/КТП МДК 01.02 М-21.docx'
+# Обновлено 2026-10-23: папка KTP/гот/ была удалена пользователем при чистке KTP/.
+# Если скрипт нужен заново — укажите актуальный источник SRC.
+SRC = '/home/z/my-project/YMK/KTP/КТП МДК 01.02 М 2 курс.docx'
+DST = '/home/z/my-project/YMK/KTP/КТП МДК 01.02 М 2 курс.docx'
 
 ET.register_namespace('w', W)
 for pfx, uri in [

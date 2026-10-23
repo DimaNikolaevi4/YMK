@@ -5,7 +5,8 @@ from docx import Document
 
 W = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
 
-ETALON = "/home/z/my-project/YMK/KTP/КТП МДК 05.02 М2 курс.docx"
+# Обновлено 2026-10-23: имя файла после чистки KTP/
+ETALON = "/home/z/my-project/YMK/KTP/КТП МДК 05.02 М 2 курс.docx"
 GEN = "/home/z/my-project/test_ktp_generated.docx"
 
 e = Document(ETALON)

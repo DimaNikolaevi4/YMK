@@ -5,14 +5,15 @@ sys.path.insert(0, '/home/z/my-project/YMK/scripts')
 from extract_ktp_hours import doc_text_and_tables
 
 FILES = [
-    '/home/z/my-project/YMK/KTP/КТП МДК 05.02 М2 курс.docx',
-    '/home/z/my-project/YMK/KTP/КТП МДК 01.02 М-21.docx',
-    '/home/z/my-project/YMK/KTP/КТП МДК 02.01 С-21.docx',
-    '/home/z/my-project/YMK/KTP/КТП МДК 02.01 С-22.docx',
-    '/home/z/my-project/YMK/KTP/КТП МДК 02.02 С-21.docx',
-    '/home/z/my-project/YMK/KTP/КТП МДК 02.02 С-22.docx',
-    '/home/z/my-project/YMK/KTP/КТП МДК 03.02 С-21.docx',
-    '/home/z/my-project/YMK/KTP/КТП МДК 03.02 С-22.docx',
+    # Обновлено 2026-10-23: актуальные имена КТП после чистки KTP/ пользователем.
+    # Старые 8 файлов (С-21.docx, С-22.docx раздельно, 'М-21.docx', 'М2 курс.docx')
+    # заменены на 6 актуальных (С-21-22 2 курс.docx, 'М 2 курс.docx').
+    '/home/z/my-project/YMK/KTP/КТП МДК 05.02 М 2 курс.docx',       # эталон
+    '/home/z/my-project/YMK/KTP/КТП МДК 01.02 М 2 курс.docx',
+    '/home/z/my-project/YMK/KTP/КТП МДК 02.01 С-21-22 2 курс.docx',
+    '/home/z/my-project/YMK/KTP/КТП МДК 02.02 С-21-22 2 курс.docx',
+    '/home/z/my-project/YMK/KTP/КТП МДК 03.02 С-21-22 2 курс.docx',
+    '/home/z/my-project/YMK/KTP/КТП МДК 02.01 КИП-31.docx',
 ]
 
 for path in FILES:

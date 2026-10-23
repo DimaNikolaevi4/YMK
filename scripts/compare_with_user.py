@@ -1,8 +1,9 @@
 """Compare our updated file with user's reference file on all 7 changes."""
 from docx import Document
 
-our = Document('/home/z/my-project/YMK/KTP/МДК_05_02_КТП.docx')
-usr = Document('/home/z/my-project/YMK/KTP/КТП МДК 05.02 М2 курс.docx')
+# Обновлено 2026-10-23: имена КТП приведены к актуальным
+our = Document('/home/z/my-project/YMK/KTP/КТП МДК 05.02 М 2 курс.docx')  # наша (эталон)
+usr = Document('/home/z/my-project/YMK/KTP/КТП МДК 05.02 М 2 курс.docx')  # версия пользователя (для сравнения)
 
 print('=== 1. Ministry ===')
 print(f'  Our:  {our.paragraphs[0].text}')

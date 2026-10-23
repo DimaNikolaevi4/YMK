@@ -16,7 +16,8 @@ from xml.etree import ElementTree as ET
 
 W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
 NS = {'w': W}
-PATH = '/home/z/my-project/YMK/KTP/КТП МДК 01.02 М-21.docx'
+# Обновлено 2026-10-23: имя КТП после чистки KTP/ пользователем (было 'М-21.docx')
+PATH = '/home/z/my-project/YMK/KTP/КТП МДК 01.02 М 2 курс.docx'
 
 ET.register_namespace('w', W)
 for pfx, uri in [
@@ -122,8 +123,8 @@ with zipfile.ZipFile(PATH, 'w', zipfile.ZIP_DEFLATED) as z:
     for n in names:
         z.writestr(n, data[n])
 print('Сохранено:', PATH)
-shutil.copy(PATH, '/home/z/my-project/download/КТП МДК 01.02 М-21.docx')
-print('Копия: /home/z/my-project/download/КТП МДК 01.02 М-21.docx')
+shutil.copy(PATH, '/home/z/my-project/download/КТП МДК 01.02 М 2 курс.docx')
+print('Копия: /home/z/my-project/download/КТП МДК 01.02 М 2 курс.docx')
 
 # ---------- Контроль ----------
 sys.path.insert(0, '/home/z/my-project/YMK/scripts')
