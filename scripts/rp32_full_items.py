@@ -4,7 +4,7 @@ import sys
 sys.path.insert(0, '/home/z/my-project/YMK/scripts')
 from extract_ktp_hours import doc_text_and_tables, flat
 
-PATH = '/home/z/my-project/YMK/RP/15.01.37_РП_ПМ.02_2025.docx'
+PATH = '/home/z/my-project/YMK/RP/01_Актуальные/15.01.37_РП_ПМ.02_2025.docx'
 texts, tables = doc_text_and_tables(PATH)
 for ti, rows in enumerate(tables):
     j = ' '.join(c['text'] for rr in rows[:2] for c in rr)

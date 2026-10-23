@@ -5,7 +5,7 @@ from xml.etree import ElementTree as ET
 
 W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
 NS = {'w': W}
-PATH = '/home/z/my-project/YMK/RP/15.01.37_РП_ПМ.02_2025.docx'
+PATH = '/home/z/my-project/YMK/RP/01_Актуальные/15.01.37_РП_ПМ.02_2025.docx'
 
 with zipfile.ZipFile(PATH) as z:
     xml = z.read('word/document.xml').decode('utf-8')

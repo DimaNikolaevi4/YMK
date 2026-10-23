@@ -107,7 +107,7 @@ def parse_lessons(rows, start):
 data = {}
 
 # ============ РП ПМ.02 (15.01.37) ============
-doc = Document('/home/z/my-project/YMK/RP/15.01.37_РП_ПМ.02_2025 (2).docx')
+doc = Document('/home/z/my-project/YMK/RP/02_Оригиналы/15.01.37_РП_ПМ.02_2025 (2).docx')
 tbl = doc.tables[7]
 rows = tbl._tbl.findall('.//' + W + 'tr')
 items = parse_lessons(rows, 0)

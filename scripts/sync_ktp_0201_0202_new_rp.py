@@ -19,7 +19,7 @@ W = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
 NSW = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
 NS = {'w': NSW}
 BASE = '/home/z/my-project/YMK'
-RP_PATH = f'{BASE}/RP/15.01.37_РП_ПМ.02_2025.docx'
+RP_PATH = f'{BASE}/RP/01_Актуальные/15.01.37_РП_ПМ.02_2025.docx'
 
 
 # ---------------- RP: точные тексты пунктов 3.2 ----------------
