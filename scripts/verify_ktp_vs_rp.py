@@ -5,7 +5,7 @@ sys.path.insert(0, '/home/z/my-project/YMK/scripts')
 from extract_ktp_hours import doc_text_and_tables, flat
 
 BASE = '/home/z/my-project/YMK'
-RP = f'{BASE}/RP/15.01.37_РП_ПМ.02_2025.docx'
+RP = f'{BASE}/RP/01_Актуальные/15.01.37_РП_ПМ.02_2025.docx'
 
 
 def rp_content_items():

@@ -10,7 +10,7 @@ from extract_ktp_hours import doc_text_and_tables
 YMK = '/home/z/my-project/YMK'
 KTP1 = f'{YMK}/KTP/КТП МДК 02.01 С-21.docx'
 KTP2 = f'{YMK}/KTP/КТП МДК 02.02 С-21.docx'
-RP   = f'{YMK}/RP/15.01.37_РП_ПМ.02_2025.docx'
+RP   = f'{YMK}/RP/01_Актуальные/15.01.37_РП_ПМ.02_2025.docx'
 
 def rows_of(table):
     """table = список строк; строка = словарь {col: {'text','span'}} или {col: str}."""

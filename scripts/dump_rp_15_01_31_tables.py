@@ -4,7 +4,7 @@ import re, sys
 sys.path.insert(0, '/home/z/my-project/YMK/scripts')
 from extract_ktp_hours import doc_text_and_tables
 
-RP = '/home/z/my-project/YMK/RP/15.01.31_РП_ПМ.02_2024.docx'
+RP = '/home/z/my-project/YMK/RP/03_Архив/15.01.31_РП_ПМ.02_2024.docx'
 
 def celltext(v):
     if isinstance(v, dict):
