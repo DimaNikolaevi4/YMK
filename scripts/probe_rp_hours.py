@@ -70,8 +70,9 @@ def probe_doc(path):
             print(' ', line.strip()[:180])
 
 if __name__ == '__main__':
-    probe_docx(os.path.join(BASE, 'RP', 'РП_ПМ_05_M21.docx'))
-    probe_docx(os.path.join(BASE, 'RP', '15.01.37_РП_ПМ.02_2025 (2).docx'))
-    probe_docx(os.path.join(BASE, 'RP', '15.01.37_РП_ПМ.03_2025.docx'))
-    probe_doc(os.path.join(BASE, 'RP', '08.02.09_ПМ.01_РП_2024.doc'))
-    probe_doc(os.path.join(BASE, 'RP', 'РП ПМ 03 КИП.doc'))
+    # Обновлено 2026-10-23: пути к RP/ после реструктуризации в 3-уровневую
+    probe_docx(os.path.join(BASE, 'RP/01_Актуальные', 'РП_ПМ_05_M21.docx'))
+    probe_docx(os.path.join(BASE, 'RP/02_Оригиналы', '15.01.37_РП_ПМ.02_2025 (2).docx'))
+    probe_docx(os.path.join(BASE, 'RP/01_Актуальные', '15.01.37_РП_ПМ.03_2025.docx'))
+    probe_doc(os.path.join(BASE, 'RP/01_Актуальные', '08.02.09_ПМ.01_РП_2024.doc'))
+    probe_doc(os.path.join(BASE, 'RP/01_Актуальные', 'РП ПМ 03 КИП.doc'))

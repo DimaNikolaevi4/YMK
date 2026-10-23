@@ -15,7 +15,8 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment
 from openpyxl.utils import get_column_letter
 
-OUT = '/home/z/my-project/YMK/Сверка МДК 01.02 М-21.xlsx'
+# Обновлено 2026-10-23: файл сверки перенесён в Сверки/
+OUT = '/home/z/my-project/YMK/Сверки/Сверка МДК 01.02 М-21.xlsx'
 
 GREEN = Font(name=font_body().name, size=font_body().size, color=ACCENT_POSITIVE, bold=True)
 GRAY = Font(name=font_body().name, size=font_body().size, color=NEUTRAL_600, bold=True)
