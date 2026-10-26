@@ -483,6 +483,12 @@ def main() -> None:
             report.add(FAIL, f"Билеты: осталось «Произвести сборку» ({len(old_phrasing)})", old_phrasing[0][:60])
         else:
             report.add(PASS, "Билеты: практическое задание — «Произвести наладку»")
+
+        сборка = [p for p in paragraphs if re.search(r"сборк", p, re.IGNORECASE)]
+        if сборка:
+            report.add(FAIL, f"Билеты: осталась терминология «сборка» ({len(сборка)})", сборка[0][:60])
+        else:
+            report.add(PASS, "Билеты: терминология «сборка» заменена на «наладка»")
     else:
         q_lines = between(paragraphs, "Вопросы", "КРИТЕРИИ ОЦЕНКИ")
         groups: list[dict] = []
