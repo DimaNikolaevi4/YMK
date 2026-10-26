@@ -470,6 +470,40 @@ def add_numbered_item(doc: Document, number: int, text: str) -> None:
     run.font.size = Pt(12)
 
 
+def build_tickets(doc: Document, tickets: list[dict]) -> None:
+    """Экзаменационные билеты: шапка 1x3 (рассмотрено / билет / утверждаю), вопросы, подпись."""
+    widths = [4.6, 8.7, 4.0]
+    for index, ticket in enumerate(tickets):
+        if index:
+            add_par(doc, "", 12, align=None, page_break_before=True)
+        else:
+            add_empty(doc, 1)
+
+        table = add_table(doc, 1, 3, widths)
+        cells = table.rows[0].cells
+
+        set_cell(cells[0], ticket.get("left") or "", size=10, align="left")
+        header_lines = ticket.get("header") or []
+        if header_lines:
+            set_cell(cells[1], header_lines[0], size=12, bold=True, align="center")
+            for line in header_lines[1:]:
+                par = cells[1].add_paragraph()
+                par.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                par.paragraph_format.space_before = Pt(0)
+                par.paragraph_format.space_after = Pt(0)
+                run = par.add_run(line)
+                run.font.name = FONT
+                run.font.size = Pt(11)
+        set_cell(cells[2], ticket.get("right") or "", size=10, align="left")
+
+        add_empty(doc, 1)
+        for number, question in enumerate(ticket.get("questions") or [], start=1):
+            add_par(doc, f"{number}. {question}", 12, align="justify", first_line_indent=1.25)
+        for line in ticket.get("extra") or []:
+            add_par(doc, line, 12, align="justify", first_line_indent=1.25)
+        add_par(doc, ticket.get("teacher", ""), 12, align="left", space_before=10)
+
+
 def build_questions(doc: Document, data: dict) -> None:
     """Блок «Вопросы к зачёту/экзамену».
 
@@ -484,6 +518,10 @@ def build_questions(doc: Document, data: dict) -> None:
         title = questions.get("title", "Вопросы к дифференцированному зачету")
         groups = questions.get("groups")
         items = questions.get("items") or []
+        if questions.get("kind") == "tickets":
+            add_par(doc, title, 12, bold=True, align="center", page_break_before=True)
+            build_tickets(doc, questions.get("tickets") or [])
+            return
     else:
         title = "Вопросы к дифференцированному зачету"
         groups = None
