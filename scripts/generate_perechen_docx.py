@@ -10,7 +10,7 @@
 Запуск:
     python scripts/generate_perechen_docx.py \
         --data scripts/data_perechen_etalon.json \
-        --out "Перечни/перечень ЭТАЛОН.docx" --blocks all
+        --out "Перечни/01_Готовые/перечень МДК 02.01 КИП-31.docx" --blocks all
 
 Отдельные блоки:
     --blocks title,control     только титул и таблица «Контроль знаний»

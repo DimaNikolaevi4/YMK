@@ -33,7 +33,7 @@ scripts/
 | `generate_perechen_docx.py` | **Генератор перечня** — собирает `.docx` из JSON по блокам: `title`, `control`, `requirements`, `works`, `course_project`, `questions`, `criteria`, `student_lists`. |
 | `import_perechen_etalon.py` | Разбор образца `.docx` в JSON (раскладка по блокам схемы). Использован для `data_perechen_sample_pm02.json`. |
 | `data_perechen_mdk0201_kip31.json` | Данные перечня МДК 02.01 (КИП-31): 15.01.31, диф. зачёт, 2026-2027 — 4 темы с практическими занятиями, 26 вопросов. |
-| `data_perechen_sample_pm02.json` | Данные образца `Перечни/перечень ПМ 02 МДК 02.01.docx` — сверка и regression (курсовое, 10 тем). |
+| `data_perechen_sample_pm02.json` | Данные образца `Перечни/02_Архивные/перечень ПМ 02 МДК 02.01.docx` — сверка и regression. |
 | `data_perechen_kdz_pm02.json` | Перечень КДЗ ПМ.02 (С-21, С-22): МДК 02.01 + 02.02, 19 практических занятий, 27 вопросов, занятие 24. |
 | `data_perechen_pa02_exam.json` | Перечень ПА.02 (С-21, С-22): экзамен по модулю ПМ.02, те же материалы и вопросы. |
 
@@ -42,7 +42,7 @@ scripts/
 ```bash
 python scripts/generate_perechen_docx.py \
   --data scripts/data_perechen_mdk0201_kip31.json \
-  --out "Перечни/перечень МДК 02.01 КИП-31.docx" \
+  --out "Перечни/01_Готовые/перечень МДК 02.01 КИП-31.docx" \
   --blocks all
 ```
 

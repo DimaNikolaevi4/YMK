@@ -2,7 +2,7 @@
 """Импорт образца «Перечня материалов» в JSON для generate_perechen_docx.py.
 
 Одноразовый инструмент: разбирает конкретный образец (по умолчанию —
-«Перечни/перечень ПМ 02 МДК 02.01.docx») и раскладывает его по блокам схемы:
+«Перечни/02_Архивные/перечень ПМ 02 МДК 02.01.docx») и раскладывает его по блокам схемы:
 meta, control, requirements, works, course_project, criteria, student_lists.
 
 Тексты переносятся дословно; нормализуются только пробелы и разбивка
@@ -11,7 +11,7 @@ meta, control, requirements, works, course_project, criteria, student_lists.
 
 Запуск из корня репозитория:
     python scripts/import_perechen_etalon.py \
-        --src "Перечни/перечень ПМ 02 МДК 02.01.docx" \
+        --src "Перечни/02_Архивные/перечень ПМ 02 МДК 02.01.docx" \
         --out scripts/data_perechen_etalon.json
 """
 
