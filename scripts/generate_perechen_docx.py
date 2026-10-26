@@ -380,7 +380,7 @@ def build_works(doc: Document, data: dict) -> None:
 
     visible = [
         t for t in topics
-        if any(t.get(f[0]) for f in flags)
+        if t.get("header") or any(t.get(f[0]) for f in flags)
     ]
 
     add_par(doc, heading, 12, bold=True, align="center", page_break_before=True)
@@ -401,6 +401,11 @@ def build_works(doc: Document, data: dict) -> None:
         row_index += 1
 
     for topic in visible:
+        if topic.get("header"):
+            merged = table.cell(row_index, 0).merge(table.cell(row_index, len(columns) - 1))
+            set_cell(merged, topic["header"], align="center")
+            row_index += 1
+            continue
         cells = table.rows[row_index].cells
         set_cell(cells[0], topic.get("topic", ""))
         for idx, (key, _, _) in enumerate(flags, start=1):

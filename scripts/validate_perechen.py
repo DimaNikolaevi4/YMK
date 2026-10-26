@@ -55,6 +55,12 @@ def similar(a: str, b: str) -> float:
     return SequenceMatcher(None, norm(a), norm(b)).ratio()
 
 
+def split_sentences(text: str) -> list[str]:
+    """Разбить ячейку требований на пункты и нормализовать концы."""
+    parts = [p.strip() for p in re.split(r"(?<=[.;])\s+(?=[а-яёa-z])", text) if p.strip()]
+    return [p.strip(" ;.") for p in parts if p.strip(" ;.")]
+
+
 # ------------------------------------------------------------------ разбор документов
 
 
@@ -90,25 +96,31 @@ def parse_rp(path: Path) -> dict:
     doc = Document(path)
     paragraphs = [re.sub(r"\s+", " ", p.text).strip() for p in doc.paragraphs]
 
-    pm_name = next((t for t in paragraphs if re.match(r"^ПМ\s*02\s", t)), "")
+    pm_name = ""
+    for text in paragraphs:
+        if re.match(r"^ПМ[.\s]?02\b", text) and len(text) > len(pm_name):
+            pm_name = text
+
     profession = ""
-    for i, text in enumerate(paragraphs):
-        if text.lower().startswith("по профессии 15.01.31"):
-            tail = paragraphs[i + 1] if i + 1 < len(paragraphs) else ""
-            profession = f"{text} {tail}".strip()
+    for text in paragraphs:
+        if "професси" in text.lower() and re.search(r"\b\d{2}\.\d{2}\.\d{2}\b", text):
+            profession = text
             break
 
     # «Элементы модуля»: № | МДК.02.01. Наименование | Форма аттестации
     mdk_code, mdk_name, attestation = "", "", ""
+    has_module_exam = False
     for table in doc.tables:
         for row in table.rows:
-            cells = [c.text.strip() for c in row.cells]
-            if len(cells) >= 3 and cells[1].startswith("МДК.02.01"):
+            cells = [re.sub(r"\s+", " ", c.text).strip() for c in row.cells]
+            joined = " ".join(cells).lower()
+            if "экзамен" in joined and "модул" in joined:
+                has_module_exam = True
+            if not mdk_code and len(cells) >= 3 and re.match(r"МДК[.\s]*02\.01", cells[1]):
                 mdk_code = "МДК 02.01"
-                mdk_name = re.sub(r"^МДК\.?\s*02\.01\.?\s*", "", cells[1]).strip()
+                mdk_name = re.sub(r"^МДК[.\s]*02\.01[.\s]*", "", cells[1]).strip()
                 attestation = cells[2].strip()
-                break
-        if mdk_code:
+        if mdk_code and has_module_exam:
             break
 
     requirements = {"practice_obligatory": [], "skills_obligatory": [], "knowledge_obligatory": []}
@@ -129,6 +141,24 @@ def parse_rp(path: Path) -> dict:
             continue
         if current and text:
             requirements[current].append(text)
+
+    if not any(requirements.values()):
+        # Формат 15.01.37: требования в таблице компетенций (уметь / знать / владеть навыками)
+        for table in doc.tables:
+            header = row_texts(table.rows[0])
+            if not header or not header[0].startswith("Код ОК"):
+                continue
+            for row in table.rows[1:]:
+                cells = row_texts(row)
+                if not cells or not cells[0].startswith("ПК 2."):
+                    continue
+                if len(cells) > 1:
+                    requirements["skills_obligatory"] += split_sentences(cells[1])
+                if len(cells) > 2:
+                    requirements["knowledge_obligatory"] += split_sentences(cells[2])
+                if len(cells) > 3 and cells[3] != "-":
+                    requirements["practice_obligatory"] += split_sentences(cells[3])
+            break
 
     # содержание МДК 02.01
     content = None
@@ -185,6 +215,7 @@ def parse_rp(path: Path) -> dict:
         "requirements": requirements,
         "topics": topics,
         "other_topics": other_topics,
+        "has_module_exam": has_module_exam,
     }
 
 
@@ -259,10 +290,14 @@ def main() -> None:
     parser.add_argument("--docx", required=True)
     parser.add_argument("--rp", required=True)
     parser.add_argument("--ktp")
+    parser.add_argument("--all-mdk", action="store_true", help="документ по модулю: все МДК РП считаются основными")
     args = parser.parse_args()
 
     doc = parse_docx(Path(args.docx))
     rp = parse_rp(Path(args.rp))
+    if args.all_mdk:
+        rp["topics"] = rp["topics"] + rp["other_topics"]
+        rp["other_topics"] = []
     ktp = parse_ktp(Path(args.ktp)) if args.ktp else None
     report = Report()
 
@@ -276,21 +311,24 @@ def main() -> None:
     # 1. титул
     if rp["mdk_name"] and norm(rp["mdk_name"]) in norm(title_zone):
         report.add(PASS, "Титул: наименование МДК совпадает с РП", rp["mdk_name"])
+    elif rp["pm_name"] and norm(rp["pm_name"]) in norm(title_zone):
+        report.add(PASS, "Титул: наименование ПМ совпадает с РП (документ по модулю)", rp["pm_name"][:80])
     else:
-        report.add(FAIL, "Титул: наименование МДК не совпадает с РП", f"в РП: {rp['mdk_name']!r}")
+        report.add(FAIL, "Титул: наименование МДК/ПМ не совпадает с РП", f"в РП: {rp['mdk_name']!r}")
 
     if "пм 02" in norm(title_zone):
         if rp["pm_name"] and norm(rp["pm_name"]) in norm(title_zone):
             report.add(PASS, "Титул: наименование ПМ совпадает с РП")
         else:
-            report.add(PASS, "Титул: шифр ПМ 02 указан", "документ по МДК, полное название ПМ не выводится")
+            report.add(PASS, "Титул: шифр ПМ 02 указан")
     else:
         report.add(FAIL, "Титул: шифр ПМ 02 не найден")
 
-    if "15.01.31" in title_zone and "мастер контрольно измерительных приборов и автоматики" in norm(title_zone):
-        report.add(PASS, "Титул: профессия 15.01.31 указана")
+    prof_code = re.search(r"\b(\d{2}\.\d{2}\.\d{2})\b", rp["profession"] or "")
+    if prof_code and prof_code.group(1) in title_zone:
+        report.add(PASS, "Титул: профессия совпадает с РП", prof_code.group(1))
     else:
-        report.add(FAIL, "Титул: профессия 15.01.31 не найдена")
+        report.add(FAIL, "Титул: профессия не найдена", rp["profession"][:70])
 
     if "2026 2027" in norm(title_zone) and "2026" in title_zone:
         report.add(PASS, "Титул: учебный год 2026-2027 и год 2026")
@@ -299,14 +337,24 @@ def main() -> None:
 
     # 2. форма аттестации и номер занятия
     control_flat = flat(control)
-    if rp["attestation"] and norm(rp["attestation"]) in norm(control_flat):
+    doc_form = " ".join(control[1][1]) if len(control) > 1 and len(control[1]) > 1 else ""
+    rp_form = norm(rp["attestation"])
+    form_norm = norm(doc_form)
+    if rp_form and (rp_form in form_norm or form_norm in rp_form):
         report.add(PASS, "Контроль знаний: форма аттестации совпадает с РП", rp["attestation"])
+    elif "экзамен" in form_norm and rp.get("has_module_exam", False):
+        report.add(PASS, "Контроль знаний: экзамен по модулю (по РП)", doc_form)
     else:
-        report.add(FAIL, "Контроль знаний: форма аттестации не совпадает с РП", f"в РП: {rp['attestation']!r}")
+        report.add(FAIL, "Контроль знаний: форма аттестации не совпадает с РП", f"в РП: {rp['attestation']!r}, в документе: {doc_form!r}")
 
     if ktp and ktp["attestation"]:
         num = ktp["attestation"]["num"]
-        if re.search(rf"(?<![\d-]){re.escape(num)}(?![\d-])", control_flat):
+        if "экзамен" in form_norm and "модул" in form_norm:
+            if re.search(r"ПА\s*\.?\s*0?2", control_flat, re.IGNORECASE):
+                report.add(PASS, "Контроль знаний: экзамен по модулю ПА.02 (номера занятия нет)")
+            else:
+                report.add(WARN, "Контроль знаний: не указан шифр ПА.02")
+        elif re.search(rf"(?<![\d-]){re.escape(num)}(?![\d-])", control_flat):
             report.add(PASS, "Контроль знаний: номер занятия совпадает с КТП", f"занятие {num}")
         else:
             report.add(FAIL, "Контроль знаний: номер занятия не совпадает с КТП", f"в КТП {num}")
@@ -342,11 +390,15 @@ def main() -> None:
         if len(row) < 2:
             continue
         for line in row[1]:
-            cleaned = re.sub(r"^Практическое занятие\s*№\s*[\d\s\-–—]+", "", line).strip()
+            cleaned = re.sub(r"^Практическое занятие\s*(№\s*[\d\s\-–—]+)?\.?\s*", "", line).strip()
             if cleaned:
                 doc_practicals.append(cleaned)
 
-    rp_practicals = [p["name"] for t in rp["topics"] for p in t["practical"]]
+    rp_practicals = [
+        re.sub(r"^Практическое занятие\.?\s*", "", p["name"]).strip()
+        for t in rp["topics"]
+        for p in t["practical"]
+    ]
     missing = [
         name for name in rp_practicals
         if not any(similar(name, d) >= 0.85 or norm(name) in norm(d) for d in doc_practicals)
@@ -380,7 +432,7 @@ def main() -> None:
         report.add(PASS, f"Требования: все {total_req} пунктов РП перенесены дословно")
 
     # 5. вопросы
-    questions = between(paragraphs, "Вопросы к дифференцированному зачету", "КРИТЕРИИ ОЦЕНКИ")
+    questions = between(paragraphs, "Вопросы", "КРИТЕРИИ ОЦЕНКИ")
     questions = [re.sub(r"^\d+\.\s*", "", q) for q in questions]
     if not questions:
         report.add(WARN, "Вопросы к зачёту: блок отсутствует")
@@ -438,15 +490,19 @@ def main() -> None:
             report.add(PASS, f"Вопросы: охвачены все темы РП ({len(rp['topics'])})")
 
     # 6. лист ознакомления
+    groups_match = re.search(r"Группа:\s*(.+)", next((t for t in paragraphs if t.startswith("Группа")), ""))
+    groups = [g.strip() for g in re.split(r"[,;]", groups_match.group(1))] if groups_match else []
     if student_tables:
+        headings = [t for t in paragraphs if t.lower().startswith("студенты группы")]
+        missing_groups = [g for g in groups if not any(g in h for h in headings)]
+        if missing_groups:
+            report.add(FAIL, "Лист ознакомления: нет листа для группы", "; ".join(missing_groups))
+        else:
+            report.add(PASS, f"Лист ознакомления: листы по всем группам ({len(groups)})", ", ".join(groups))
+
         table = student_tables[0]
         body = table[1:]
         empty = sum(1 for row in body if all(not cell for cell in row))
-        group_line = next((t for t in paragraphs if t.lower().startswith("студенты группы")), "")
-        if "КИП-31" in group_line:
-            report.add(PASS, "Лист ознакомления: группа КИП-31")
-        else:
-            report.add(FAIL, "Лист ознакомления: группа не совпадает", group_line)
         if empty == 25:
             report.add(PASS, "Лист ознакомления: 25 пустых строк")
         else:
