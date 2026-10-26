@@ -455,37 +455,53 @@ def build_course_project(doc: Document, data: dict) -> None:
             add_par(doc, line, 12, align=None)
 
 
-def build_questions(doc: Document, data: dict) -> None:
-    """Блок «Вопросы к зачёту/экзамену» — только если exam_questions не пуст.
+def add_numbered_item(doc: Document, number: int, text: str) -> None:
+    """Номер, табуляция до 1,25 см, текст в одну колонку; переносы — по тексту."""
+    par = doc.add_paragraph()
+    par.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    pf = par.paragraph_format
+    pf.space_before = Pt(0)
+    pf.space_after = Pt(0)
+    pf.left_indent = Cm(1.25)
+    pf.first_line_indent = Cm(-1.25)
+    pf.tab_stops.add_tab_stop(Cm(1.25))
+    run = par.add_run(f"{number}.\t{text}")
+    run.font.name = FONT
+    run.font.size = Pt(12)
 
-    Единое оформление: номер, табуляция до 1,25 см, текст в одну колонку;
-    висячий отступ — переносы строк выровнены по тексту, а не по номеру.
+
+def build_questions(doc: Document, data: dict) -> None:
+    """Блок «Вопросы к зачёту/экзамену».
+
+    Два вида: плоский список items или группы по МДК (groups) — у каждой части
+    свой заголовок и своя нумерация с 1.
     """
     questions = data.get("exam_questions")
     if not questions:
         return
+
     if isinstance(questions, dict):
         title = questions.get("title", "Вопросы к дифференцированному зачету")
+        groups = questions.get("groups")
         items = questions.get("items") or []
     else:
         title = "Вопросы к дифференцированному зачету"
+        groups = None
         items = questions
 
     add_par(doc, title, 12, bold=True, align="center", page_break_before=True)
     add_empty(doc, 1)
-    for n, item in enumerate(items, start=1):
-        par = doc.add_paragraph()
-        par.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-        pf = par.paragraph_format
-        pf.space_before = Pt(0)
-        pf.space_after = Pt(0)
-        pf.left_indent = Cm(1.25)
-        pf.first_line_indent = Cm(-1.25)
-        pf.tab_stops.add_tab_stop(Cm(1.25))
-        run = par.add_run(f"{n}.\t{item}")
-        run.font.name = FONT
-        run.font.size = Pt(12)
-    add_empty(doc, 1)
+
+    if groups:
+        for index, group in enumerate(groups, start=1):
+            add_par(doc, f"{index}. {group['title']}", 12, bold=True, align="left", space_before=4)
+            for number, item in enumerate(group.get("items") or [], start=1):
+                add_numbered_item(doc, number, item)
+            add_empty(doc, 1)
+    else:
+        for number, item in enumerate(items, start=1):
+            add_numbered_item(doc, number, item)
+        add_empty(doc, 1)
 
 
 def resolve_criteria(criteria):

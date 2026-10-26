@@ -174,20 +174,19 @@ def parse_rp(path: Path) -> dict:
     current_topic = None
     in_practice = False
     current_mdk = None
+    current_mdk_code = ""
     for row in content.rows:
         texts = [t for t in row_texts(row) if t]
         if not texts:
             continue
-        if texts[0].startswith("МДК 02.01"):
-            current_mdk = "main"
-            current_topic = None
-            continue
-        if texts[0].startswith(("МДК 02.02", "МДК 02.03", "МДК 02.04")):
-            current_mdk = "other"
+        if texts[0].startswith("МДК"):
+            code_match = re.search(r"МДК\s*(\d{2}\.\d{2})", texts[0])
+            current_mdk_code = code_match.group(1) if code_match else ""
+            current_mdk = "main" if current_mdk_code == "02.01" else "other"
             current_topic = None
             continue
         if texts[0].startswith("Тема"):
-            current_topic = {"name": texts[0], "theory": [], "practical": []}
+            current_topic = {"name": texts[0], "theory": [], "practical": [], "mdk": current_mdk_code}
             (topics if current_mdk == "main" else other_topics).append(current_topic)
             in_practice = False
             continue
@@ -432,62 +431,98 @@ def main() -> None:
         report.add(PASS, f"Требования: все {total_req} пунктов РП перенесены дословно")
 
     # 5. вопросы
-    questions = between(paragraphs, "Вопросы", "КРИТЕРИИ ОЦЕНКИ")
-    questions = [re.sub(r"^\d+\.\s*", "", q) for q in questions]
-    if not questions:
-        report.add(WARN, "Вопросы к зачёту: блок отсутствует")
-    else:
-        if 20 <= len(questions) <= 32:
-            report.add(PASS, "Вопросы к зачёту: количество в норме", f"{len(questions)} шт. (20–32)")
-        else:
-            report.add(FAIL, "Вопросы к зачёту: количество вне нормы", f"{len(questions)} шт.")
+    q_lines = between(paragraphs, "Вопросы", "КРИТЕРИИ ОЦЕНКИ")
+    groups: list[dict] = []
+    current_group = None
+    for line in q_lines:
+        match = re.match(r"^\d+\.\s*МДК\s*(\d{2}\.\d{2})", line)
+        if match:
+            current_group = {"code": match.group(1), "title": line, "items": []}
+            groups.append(current_group)
+            continue
+        item = re.sub(r"^\d+\.\s*", "", line).strip()
+        if not item:
+            continue
+        if current_group is not None:
+            current_group["items"].append(item)
 
+    flat_items = [re.sub(r"^\d+\.\s*", "", line) for line in q_lines if not re.match(r"^\d+\.\s*МДК", line)]
+    flat_items = [item for item in flat_items if item]
+
+    def check_against(items: list[str], topics: list[dict], label: str) -> None:
         chunks = [
             (t["name"], " ".join(t["theory"] + [p["name"] for p in t["practical"]]))
-            for t in rp["topics"]
+            for t in topics
         ]
-        other_chunks = [
-            (t["name"], " ".join(t["theory"] + [p["name"] for p in t["practical"]]))
-            for t in rp["other_topics"]
-        ]
-        unmatched, foreign, covered = [], [], set()
-        for question in questions:
+        unmatched, covered = [], set()
+        for question in items:
             words = significant(question)
             best_topic, best_hit = None, 0
-            for name, text in chunks:
-                hit = len(words & significant(f"{text} {name}"))
+            for name, text_ in chunks:
+                hit = len(words & significant(f"{text_} {name}"))
                 if hit > best_hit:
                     best_topic, best_hit = name, hit
-            other_hit = max(
-                (len(words & significant(f"{text} {name}")) for name, text in other_chunks),
-                default=0,
-            )
-            if best_hit < 2:
-                unmatched.append(question)
-            elif other_hit > best_hit:
-                foreign.append(question)
-            else:
+            if best_hit >= 2:
                 covered.add(best_topic)
-
+            else:
+                unmatched.append(question)
         if unmatched:
-            report.add(FAIL, f"Вопросы: не привязаны к содержанию МДК 02.01 ({len(unmatched)})", "; ".join(u[:60] for u in unmatched))
+            report.add(FAIL, f"Вопросы{f' ({label})' if label else ''}: не привязаны к содержанию ({len(unmatched)})",
+                       "; ".join(u[:60] for u in unmatched))
         else:
-            report.add(PASS, "Вопросы: каждый опирается на содержание МДК 02.01")
+            report.add(PASS, f"Вопросы{f' ({label})' if label else ''}: каждый опирается на содержание РП")
+        return covered
 
-        if foreign:
-            report.add(
-                FAIL,
-                f"Вопросы: относятся к другим МДК, не к 02.01 ({len(foreign)})",
-                "; ".join(u[:60] for u in foreign),
-            )
+    if groups and all(isinstance(g, dict) for g in groups):
+        total = 0
+        for group in groups:
+            code = group["code"]
+            items = group["items"]
+            total += len(items)
+            if len(items) < 32:
+                report.add(FAIL, f"Вопросы МДК {code}: меньше 32", f"{len(items)} шт.")
+            else:
+                report.add(PASS, f"Вопросы МДК {code}: количество", f"{len(items)} шт. (≥32)")
+            topics = [t for t in rp["topics"] if t.get("mdk") == code]
+            covered = check_against(items, topics, f"МДК {code}")
+            uncovered = [t["name"] for t in topics if t["name"] not in covered]
+            if uncovered:
+                report.add(WARN, f"Вопросы МДК {code}: темы без вопросов ({len(uncovered)})",
+                           "; ".join(u[:60] for u in uncovered))
+            else:
+                report.add(PASS, f"Вопросы МДК {code}: охвачены все темы ({len(topics)})")
+        report.add(PASS, "Вопросы: разбиты по МДК", f"частей {len(groups)}, всего {total}")
+    else:
+        if 20 <= len(flat_items) <= 32:
+            report.add(PASS, "Вопросы к зачёту: количество в норме", f"{len(flat_items)} шт. (20–32)")
         else:
-            report.add(PASS, "Вопросы: только по МДК 02.01 (не 02.02/02.03)")
-
+            report.add(FAIL, "Вопросы к зачёту: количество вне нормы", f"{len(flat_items)} шт.")
+        covered = check_against(flat_items, rp["topics"], "")
         uncovered = [t["name"] for t in rp["topics"] if t["name"] not in covered]
         if uncovered:
             report.add(WARN, f"Вопросы: темы без вопросов ({len(uncovered)})", "; ".join(u[:60] for u in uncovered))
         else:
             report.add(PASS, f"Вопросы: охвачены все темы РП ({len(rp['topics'])})")
+        if rp["other_topics"]:
+            other_chunks = [
+                (t["name"], " ".join(t["theory"] + [p["name"] for p in t["practical"]]))
+                for t in rp["other_topics"]
+            ]
+            main_chunks = [
+                (t["name"], " ".join(t["theory"] + [p["name"] for p in t["practical"]]))
+                for t in rp["topics"]
+            ]
+            foreign = []
+            for question in flat_items:
+                words = significant(question)
+                main_hit = max((len(words & significant(f"{txt} {name}")) for name, txt in main_chunks), default=0)
+                other_hit = max((len(words & significant(f"{txt} {name}")) for name, txt in other_chunks), default=0)
+                if other_hit > main_hit:
+                    foreign.append(question)
+            if foreign:
+                report.add(FAIL, f"Вопросы: относятся к другим МДК ({len(foreign)})", "; ".join(q[:60] for q in foreign))
+            else:
+                report.add(PASS, "Вопросы: только по своему МДК")
 
     # 6. лист ознакомления
     groups_match = re.search(r"Группа:\s*(.+)", next((t for t in paragraphs if t.startswith("Группа")), ""))
