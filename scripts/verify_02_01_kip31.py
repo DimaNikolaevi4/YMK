@@ -6,7 +6,7 @@ sys.path.insert(0, '/home/z/my-project/YMK/scripts')
 from extract_ktp_hours import doc_text_and_tables
 
 YMK = '/home/z/my-project/YMK'
-RP = f'{YMK}/RP/03_Архив/15.01.31_РП_ПМ.02_2024.docx'
+RP = f'{YMK}/RP/01_Актуальные/15.01.31_РП_ПМ.02_2024.docx'
 KTP = f'{YMK}/KTP/КТП МДК 02.01 КИП-31.docx'
 DATA = f'{YMK}/scripts/data_02_01_kip31.json'
 
