@@ -235,10 +235,32 @@ def parse_ktp(path: Path) -> dict:
 
 
 def parse_docx(path: Path) -> dict:
+    import hashlib
+
     doc = Document(path)
     paragraphs = [re.sub(r"\s+", " ", p.text).strip() for p in doc.paragraphs]
     tables = [table_rows(table) for table in doc.tables]
-    return {"paragraphs": paragraphs, "tables": tables, "shapes": len(doc.inline_shapes)}
+
+    # Картинки в порядке следования по телу документа, с номером билета,
+    # к которому они относятся, и md5 (для сверки с файлами схем).
+    images: list[dict] = []
+    ticket = 0
+    for child in doc.element.body.iterchildren():
+        text = "".join(t.text or "" for t in child.findall(".//" + qn("w:t")))
+        match = re.search(r"БИЛЕТ №\s*(\d+)", text)
+        if match and int(match.group(1)) != ticket:
+            ticket = int(match.group(1))
+        for blip in child.iter(qn("a:blip")):
+            rid = blip.get(qn("r:embed"))
+            if rid not in doc.part.rels:
+                continue
+            part = doc.part.rels[rid].target_part
+            images.append({
+                "ticket": ticket,
+                "md5": hashlib.md5(part.blob).hexdigest(),
+                "name": str(part.partname).rsplit("/", 1)[-1],
+            })
+    return {"paragraphs": paragraphs, "tables": tables, "shapes": len(doc.inline_shapes), "images": images}
 
 
 def between(paragraphs: list[str], start: str, stop: str) -> list[str]:
@@ -468,6 +490,29 @@ def main() -> None:
             report.add(PASS, "Билеты: схема в каждом билете", f"картинок {shapes} на {count} билетов")
         else:
             report.add(FAIL, "Билеты: не во всех билетах схема", f"картинок {shapes} на {count} билетов")
+
+        # Схема каждого билета должна быть файлом с его же номером: билет № N — «билет-N.jpeg».
+        schemes_dir = Path(args.docx).parent / "схемы"
+        scheme_md5: dict[str, str] = {}
+        if schemes_dir.is_dir():
+            import hashlib
+
+            for f in schemes_dir.glob("билет-*.jpeg"):
+                scheme_md5[f.name] = hashlib.md5(f.read_bytes()).hexdigest()
+        if scheme_md5:
+            mism = []
+            for image in doc.get("images", []):
+                n = image["ticket"]
+                want = f"билет-{n:02d}.jpeg"
+                if want not in scheme_md5:
+                    mism.append(f"нет файла {want}")
+                elif scheme_md5[want] != image["md5"]:
+                    mism.append(f"билет {n}: вставлен не {want}")
+            if mism:
+                report.add(FAIL, f"Билеты: схема не по номеру билета ({len(mism)})", "; ".join(mism[:5]))
+            else:
+                report.add(PASS, "Билеты: схема каждого билета — файл с его номером",
+                           f"{len(doc.get('images', []))} из {len(scheme_md5)}")
 
         if "2018" in full_text:
             report.add(FAIL, "Билеты: остался старый год 2018")
