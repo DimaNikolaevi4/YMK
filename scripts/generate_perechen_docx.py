@@ -470,8 +470,8 @@ def add_numbered_item(doc: Document, number: int, text: str) -> None:
     run.font.size = Pt(12)
 
 
-def build_tickets(doc: Document, tickets: list[dict]) -> None:
-    """Экзаменационные билеты: шапка 1x3 (рассмотрено / билет / утверждаю), вопросы, подпись."""
+def build_tickets(doc: Document, tickets: list[dict], base_dir: Path) -> None:
+    """Экзаменационные билеты: шапка 1x3, три вопроса, схема между 2-м и 3-м."""
     widths = [4.6, 8.7, 4.0]
     for index, ticket in enumerate(tickets):
         if index:
@@ -499,8 +499,22 @@ def build_tickets(doc: Document, tickets: list[dict]) -> None:
         add_empty(doc, 1)
         for number, question in enumerate(ticket.get("questions") or [], start=1):
             add_par(doc, f"{number}. {question}", 12, align="justify", first_line_indent=1.25)
-        for line in ticket.get("extra") or []:
-            add_par(doc, line, 12, align="justify", first_line_indent=1.25)
+            if number == 2:
+                for line in ticket.get("notes2") or []:
+                    add_par(doc, line, 12, align="justify", first_line_indent=1.25)
+                image = ticket.get("image")
+                if image:
+                    path = Path(image)
+                    if not path.exists():
+                        path = base_dir / image
+                    if path.exists():
+                        par = doc.add_paragraph()
+                        par.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                        par.paragraph_format.space_before = Pt(6)
+                        par.paragraph_format.space_after = Pt(6)
+                        par.add_run().add_picture(str(path), width=Cm(11))
+                    else:
+                        print(f"ВНИМАНИЕ: нет схемы {path}")
         add_par(doc, ticket.get("teacher", ""), 12, align="left", space_before=10)
 
 
@@ -520,7 +534,8 @@ def build_questions(doc: Document, data: dict) -> None:
         items = questions.get("items") or []
         if questions.get("kind") == "tickets":
             add_par(doc, title, 12, bold=True, align="center", page_break_before=True)
-            build_tickets(doc, questions.get("tickets") or [])
+            base_dir = Path(data.get("_out_dir") or ".")
+            build_tickets(doc, questions.get("tickets") or [], base_dir)
             return
     else:
         title = "Вопросы к дифференцированному зачету"
@@ -621,6 +636,7 @@ def main() -> None:
     args = parser.parse_args()
 
     data = json.loads(Path(args.data).read_text(encoding="utf-8"))
+    data["_out_dir"] = str(Path(args.out).parent)
     doc = setup_document()
 
     raw = [b.strip() for b in args.blocks.split(",") if b.strip()]

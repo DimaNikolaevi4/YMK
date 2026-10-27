@@ -238,7 +238,7 @@ def parse_docx(path: Path) -> dict:
     doc = Document(path)
     paragraphs = [re.sub(r"\s+", " ", p.text).strip() for p in doc.paragraphs]
     tables = [table_rows(table) for table in doc.tables]
-    return {"paragraphs": paragraphs, "tables": tables}
+    return {"paragraphs": paragraphs, "tables": tables, "shapes": len(doc.inline_shapes)}
 
 
 def between(paragraphs: list[str], start: str, stop: str) -> list[str]:
@@ -451,12 +451,23 @@ def main() -> None:
         bad_headers = []
         for table in ticket_tables:
             header = norm(" ".join(line for cell in table[0] for line in cell))
-            if "ведение наладки" not in header or "с 21" not in header or "с 22" not in header:
+            if "пм 02" not in header or "ведение наладки" not in header or "с 21" not in header or "с 22" not in header:
                 bad_headers.append(header[:60])
         if bad_headers:
             report.add(FAIL, f"Билеты: шапка не по новому ПМ ({len(bad_headers)})", "; ".join(bad_headers))
         else:
-            report.add(PASS, "Билеты: шапка каждого — новый ПМ, профессия и группы С-21, С-22")
+            report.add(PASS, "Билеты: шапка каждого — ПМ.02, профессия и группы С-21, С-22")
+
+        if "Ткаченко" in full_text:
+            report.add(PASS, "Билеты: председатель ЦК — /А.Н. Ткаченко/")
+        else:
+            report.add(FAIL, "Билеты: нет подписи председателя ЦК")
+
+        shapes = doc.get("shapes", 0)
+        if shapes >= count:
+            report.add(PASS, "Билеты: схема в каждом билете", f"картинок {shapes} на {count} билетов")
+        else:
+            report.add(FAIL, "Билеты: не во всех билетах схема", f"картинок {shapes} на {count} билетов")
 
         if "2018" in full_text:
             report.add(FAIL, "Билеты: остался старый год 2018")
@@ -473,10 +484,12 @@ def main() -> None:
 
         firsts = [p for p in paragraphs if re.match(r"^1\.\s", p)]
         seconds = [p for p in paragraphs if re.match(r"^2\.\s", p)]
-        if len(firsts) == count and len(seconds) == count:
-            report.add(PASS, "Билеты: в каждом два вопроса", f"1-х {len(firsts)}, 2-х {len(seconds)}")
+        thirds = [p for p in paragraphs if re.match(r"^3\.\s", p)]
+        if len(firsts) == count and len(seconds) == count and len(thirds) == count:
+            report.add(PASS, "Билеты: в каждом три вопроса", f"1-х {len(firsts)}, 2-х {len(seconds)}, 3-х {len(thirds)}")
         else:
-            report.add(FAIL, "Билеты: число вопросов не совпадает", f"1-х {len(firsts)}, 2-х {len(seconds)}, билетов {count}")
+            report.add(FAIL, "Билеты: число вопросов не совпадает",
+                       f"1-х {len(firsts)}, 2-х {len(seconds)}, 3-х {len(thirds)}, билетов {count}")
 
         old_phrasing = [p for p in seconds if "Произвести сборку" in p]
         if old_phrasing:
