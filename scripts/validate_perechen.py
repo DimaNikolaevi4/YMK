@@ -522,8 +522,8 @@ def main() -> None:
             report.add(FAIL, "Билеты: год 2026 не найден")
 
         teachers = [p for p in paragraphs if p.startswith("Преподаватель: ______")]
-        if len(teachers) == count and all("Бардаков" in t for t in teachers):
-            report.add(PASS, "Билеты: подпись преподавателя", f"{len(teachers)} из {count}")
+        if len(teachers) == count and all("Бардаков" in t and "Озеров" in t for t in teachers):
+            report.add(PASS, "Билеты: подпись преподавателя", f"{len(teachers)} из {count}: Бардаков Д.Н., Озеров И.Н.")
         else:
             report.add(FAIL, "Билеты: подпись преподавателя", f"{len(teachers)} из {count}")
 
