@@ -71,6 +71,24 @@ def _heading(doc, text):
     return p
 
 
+def _mixed(doc, bold_part, rest_part, *, wrap_q=False):
+    """Строка шапки: начальный фрагмент полужирный, остальное — обычным."""
+    if wrap_q and rest_part:
+        rest_part = "«{}»".format(rest_part)
+    p = doc.add_paragraph()
+    pf = p.paragraph_format
+    pf.first_line_indent = None
+    run = p.add_run(bold_part)
+    run.bold = True
+    run.font.name = FONT
+    run.font.size = Pt(BODY_PT)
+    run2 = p.add_run(rest_part)
+    run2.bold = False
+    run2.font.name = FONT
+    run2.font.size = Pt(BODY_PT)
+    return p
+
+
 def _sample_table(doc, spec):
     """Таблица-образец в блоке «Пример оформления ...» (подпись полужирная,
     сетка «Table Grid», Times New Roman 10 pt)."""
@@ -102,17 +120,21 @@ def build_work(doc, work, meta):
     """Собирает один документ практической работы в doc."""
     _set_defaults(doc)
 
-    # Шапка (без титульного листа; порядок по правкам владельца 2026-11-02)
+    # Шапка (без титульного листа). Оформление по правкам владельца 2026-11-02:
+    # выравнивание слева; начальный фрагмент каждой строки полужирный;
+    # пустая строка перед «Тема» не ставится.
+    pm_code = meta["pm_code"] or "ПМ.02"
+    prof = meta["profession"]
+    prof_code, _, prof_rest = prof.partition(" ")
     _para(doc, "ПРАКТИЧЕСКАЯ РАБОТА № {}".format(work["number"]),
-          center=True, bold=True, size=HEAD_PT)
-    _para(doc, "{} «{}»".format(meta["pm_code"], meta["pm_name"]), center=True)
-    _para(doc, "МДК {} «{}»".format(meta["mdk_code"], meta["mdk_name"]), center=True)
-    _para(doc, "Профессия {}".format(meta["profession"]), center=True)
-    _para(doc, "Группы {} · {} курс · {} семестр".format(
-        meta["groups"], meta["course"], meta["semester"]), center=True)
+          center=False, bold=True, size=HEAD_PT, indent=False)
+    _mixed(doc, pm_code + " ", meta["pm_name"], wrap_q=True)
+    _mixed(doc, "МДК {} ".format(meta["mdk_code"]), meta["mdk_name"], wrap_q=True)
+    _mixed(doc, "Профессия {} ".format(prof_code), prof_rest)
+    _mixed(doc, "Группы {} ".format(meta["groups"]),
+           "· {} курс · {} семестр".format(meta["course"], meta["semester"]))
     _para(doc, "Количество часов: {}".format(work["hours"]),
-          center=True, bold=True)
-    doc.add_paragraph()
+          center=False, bold=True, indent=False)
 
     blocks = [
         ("Тема:", [work["topic"]], "inline"),
@@ -120,6 +142,8 @@ def build_work(doc, work, meta):
         ("Оборудование:", [work["equipment"]], "inline"),
         ("Краткая теория:", work["theory"], "heading"),
         ("Пример оформления (заполнения) документа:", work.get("sample", []),
+         "sample"),
+        ("Варианты задания (исходные данные):", work.get("variants", []),
          "sample"),
         ("Ход работы:", work["steps"], "heading"),
         ("Содержание отчета:", work["report"], "heading"),
