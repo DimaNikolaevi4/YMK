@@ -71,16 +71,42 @@ def _heading(doc, text):
     return p
 
 
+def _sample_table(doc, spec):
+    """Таблица-образец в блоке «Пример оформления ...» (подпись полужирная,
+    сетка «Table Grid», Times New Roman 10 pt)."""
+    if spec.get("caption"):
+        cap = _para(doc, spec["caption"], indent=False)
+        cap.runs[0].bold = True
+    headers = spec["headers"]
+    rows = spec["rows"]
+    table = doc.add_table(rows=1 + len(rows), cols=len(headers))
+    table.style = "Table Grid"
+    _fill_cell(table.cell(0, 0), headers[0], bold=True)
+    for j, h in enumerate(headers[1:], start=1):
+        _fill_cell(table.cell(0, j), h, bold=True)
+    for i, row in enumerate(rows, start=1):
+        for j, value in enumerate(row):
+            _fill_cell(table.cell(i, j), value)
+    doc.add_paragraph()
+
+
+def _fill_cell(cell, text, bold=False):
+    cell.paragraphs[0].text = ""
+    run = cell.paragraphs[0].add_run(text)
+    run.bold = bold
+    run.font.name = FONT
+    run.font.size = Pt(10)
+
+
 def build_work(doc, work, meta):
     """Собирает один документ практической работы в doc."""
     _set_defaults(doc)
 
-    # Шапка (без титульного листа)
+    # Шапка (без титульного листа; порядок по правкам владельца 2026-11-02)
     _para(doc, "ПРАКТИЧЕСКАЯ РАБОТА № {}".format(work["number"]),
           center=True, bold=True, size=HEAD_PT)
-    _para(doc, "МДК {}".format(meta["mdk_code"]), center=True)
-    _para(doc, "«{}»".format(meta["mdk_name"]), center=True)
-    _para(doc, "ПМ.02 «{}»".format(meta["pm_name"]), center=True)
+    _para(doc, "{} «{}»".format(meta["pm_code"], meta["pm_name"]), center=True)
+    _para(doc, "МДК {} «{}»".format(meta["mdk_code"], meta["mdk_name"]), center=True)
     _para(doc, "Профессия {}".format(meta["profession"]), center=True)
     _para(doc, "Группы {} · {} курс · {} семестр".format(
         meta["groups"], meta["course"], meta["semester"]), center=True)
@@ -93,13 +119,31 @@ def build_work(doc, work, meta):
         ("Цель работы:", [work["goal"]], "inline"),
         ("Оборудование:", [work["equipment"]], "inline"),
         ("Краткая теория:", work["theory"], "heading"),
+        ("Пример оформления (заполнения) документа:", work.get("sample", []),
+         "sample"),
         ("Ход работы:", work["steps"], "heading"),
         ("Содержание отчета:", work["report"], "heading"),
         ("Контрольные вопросы:", work["questions"], "heading"),
         ("Литература:", work["literature"], "heading"),
     ]
     for title, items, kind in blocks:
-        if kind == "heading":
+        if kind == "sample":
+            # mixed-блок: абзацы и таблицы-образцы
+            if not items:
+                raise ValueError(
+                    "Работа № {}: блок «{}» пуст — заполните data-JSON".format(
+                        work["number"], title))
+            _heading(doc, title)
+            for item in items:
+                if item.get("type") == "table":
+                    _sample_table(doc, item)
+                elif item.get("type") == "p":
+                    _para(doc, item.get("text", ""))
+                else:
+                    raise ValueError(
+                        "Работа № {}: неизвестный тип item в sample: {}".format(
+                            work["number"], item.get("type")))
+        elif kind == "heading":
             _heading(doc, title)
             for i, item in enumerate(items, start=1):
                 if not item:
