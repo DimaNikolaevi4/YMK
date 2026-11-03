@@ -749,3 +749,16 @@ Stage Summary:
 - No. 1 - final (ruchnaya versiya vladelca + pravka oformleniya 2026-11-03); No. 2-7 - chernoviki 2026-11-02, soderzhanie синхронно s JSON, oformlenie ne po s3; dalnejshie dejstviya - tolko po komande vladelca (regeneracija ili ruchno')
 - Reshenie vladelca (2026-11-03, otvet na vopros agenta): No. 2-7 - OSTAVIT dlya ruchnoj pererabotki v Word, NE regenerirovat. agent tolko perenosit smyslovye pravki v data-JSON
 - Metodika, tablica vvodnoj partii (shag 3): status obnovljen na prinyatoe reshenie
+---
+Task ID: 36 (2026-11-03)
+Task: Stylistic-only fix of PR No. 2-7 (owner request: edit styling only, content untouched)
+
+Work Log:
+- Checked all 6 drafts (inspect + detail scripts): page already A4 21.0x29.7, Normal ls already 1.15, labels bold, 0 direct line-spacing overrides; outdated items vs s3: block headers without colons, literature numbered 1..9, tables not 10 pt, table header rows not bold
+- Fixed in all 6 files (python-docx, content untouched): 7 block headers got colons (bold kept); literature numbering stripped (OIL/DIL indexes and NTD refs preserved); all table runs set to TNR 10 pt, first table row bold; header line 14 pt bold verified
+- First pass bug (found by re-extract): one-digit lit items kept leading space because strip cut only 2 chars - fixed with dedicated lstrip pass; verified no text duplication (single run per lit item)
+- Verification: extract DoC-2 and DoC-5 - questions still 1..5, literature unnumbered, line counts unchanged (104/105); style report: A4, ls 1.15, all headers bold with colons, tables Table Grid 10 pt
+- JSON not touched: changes are mechanics-only, data content unchanged
+
+Stage Summary:
+- PR No. 1-7 styling now matches s3; No. 2-7 content = owner manual rework stage (approved decision); generator note (A4 in _set_defaults) still relevant for future regenerations
