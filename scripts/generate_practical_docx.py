@@ -146,7 +146,7 @@ def build_work(doc, work, meta):
         ("Варианты задания (исходные данные):", work.get("variants", []),
          "sample"),
         ("Ход работы:", work["steps"], "heading"),
-        ("Содержание отчета:", work["report"], "heading"),
+        ("Содержание отчёта:", work["report"], "heading"),
         ("Контрольные вопросы:", work["questions"], "heading"),
         ("Литература:", work["literature"], "heading"),
     ]
@@ -177,6 +177,9 @@ def build_work(doc, work, meta):
                 if not item:
                     continue
                 if title == "Ход работы:":
+                    _para(doc, "{}. {}".format(i, item))
+                elif title == "Контрольные вопросы:":
+                    # нумерация вопросов для проверки (правка владельца 2026-11-03)
                     _para(doc, "{}. {}".format(i, item))
                 else:
                     _para(doc, item)
