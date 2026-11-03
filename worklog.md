@@ -733,3 +733,17 @@ Work Log:
 
 Stage Summary:
 - Ручная версия ПР № 1 приведена к §3 методики без изменения содержания; это финальная версия № 1; работы 2-7 - по решению владельца (потом вручную им перерабатываются)
+---
+Task ID: 35 (2026-11-03)
+Task: Фиксация факта черновиков ПР No. 2-7 в 01_Gotovye; статусы обновлены
+
+Work Log:
+- Владелец сообщил: черновики No. 2-7 уже лежат в Prakticheskie/01_Gotovye; проверено - 6 файлов 43-45 KB, mtime 2026-11-02 11:23-24
+- Содержимое сверено с data-JSON (формат «с вариантами»): PZ 2 - 1 h; PZ 3-7 - 2 h; у всех theory=3, sample=9, variants=3 (variant 0 + 2 data variants), steps=5, questions=5, lit=9 - синхронно с JSON
+- Но оформление устарело относительно s3 metodiki (файлы сгенерированы до правок 2026-11-03): страница Letter 21.6x27.9 (generator ne zadaet page size), zagolovki blokov bez dvoetochij («Kratchaya teoriya»), kontrolnye voprosy bez numeracii
+- Metodika PRAKTICHESKIE_INSTRUCTIONS.md, tablica vvodnoj partii (shag 3): status obnovljen na fakt - chernoviki est, oformlenie ustarelo, zhdut regeneracii po s3 ili ruchnoj pererabotki vladelca
+- Regeneracija / redaktirovanie No. 2-7 NE nachinataetsya: reshenie vladelca 2026-11-03 «tolko 1 rabota»
+- Primechanie dlya budushchej regeneracii: generator generate_practical_docx.py ne zadaet format stranicy (tolko polja) - pered generaciej dobavit A4 (Cm(21.0)/Cm(29.7)) v _set_defaults, inache fajly snova budut Letter
+
+Stage Summary:
+- No. 1 - final (ruchnaya versiya vladelca + pravka oformleniya 2026-11-03); No. 2-7 - chernoviki 2026-11-02, soderzhanie синхронно s JSON, oformlenie ne po s3; dalnejshie dejstviya - tolko po komande vladelca (regeneracija ili ruchno')
