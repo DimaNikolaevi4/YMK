@@ -152,8 +152,12 @@ def build_work(doc, work, meta):
     ]
     for title, items, kind in blocks:
         if kind == "sample":
-            # mixed-блок: абзацы и таблицы-образцы
+            # mixed-блок: абзацы и таблицы-образцы; для работы без вариантов
+            # (например, ознакомительная № 1) блок «Варианты задания»
+            # разрешается пропустить целиком (решение владельца 2026-11-03)
             if not items:
+                if title.startswith("Варианты задания"):
+                    continue
                 raise ValueError(
                     "Работа № {}: блок «{}» пуст — заполните data-JSON".format(
                         work["number"], title))
@@ -186,7 +190,7 @@ def build_work(doc, work, meta):
             rest.bold = False
             rest.font.name = FONT
             rest.font.size = Pt(BODY_PT)
-        if not any(items):
+        if not any(items) and not title.startswith("Варианты задания"):
             raise ValueError(
                 "Работа № {}: блок «{}» пуст — заполните data-JSON".format(
                     work["number"], title))
