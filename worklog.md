@@ -747,3 +747,5 @@ Work Log:
 
 Stage Summary:
 - No. 1 - final (ruchnaya versiya vladelca + pravka oformleniya 2026-11-03); No. 2-7 - chernoviki 2026-11-02, soderzhanie синхронно s JSON, oformlenie ne po s3; dalnejshie dejstviya - tolko po komande vladelca (regeneracija ili ruchno')
+- Reshenie vladelca (2026-11-03, otvet na vopros agenta): No. 2-7 - OSTAVIT dlya ruchnoj pererabotki v Word, NE regenerirovat. agent tolko perenosit smyslovye pravki v data-JSON
+- Metodika, tablica vvodnoj partii (shag 3): status obnovljen na prinyatoe reshenie
