@@ -17,6 +17,16 @@
       "why": "генератор и валидатор готовы, очередь наполнения открыта",
       "link": "logic.md",
       "source": "agent"
+    },
+    {
+      "id": "ymk-perechen-even-semesters",
+      "title": "Создать перечни практических для мастеров и тематической аттестации на чётные семестры (через generate_perechen_docx.py + validate_perechen.py)",
+      "when": "2026-11-18",
+      "time": null,
+      "status": "todo",
+      "why": "перечни есть только на текущий (нечётный) семестр, чётные не начаты",
+      "link": "README.md",
+      "source": "owner"
     }
   ]
 }
