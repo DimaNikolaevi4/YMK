@@ -42,9 +42,17 @@ STOPWORDS = {
 
 def norm(text: str) -> str:
     """Привести текст к сравнимому виду: регистр, ё, пунктуация, пробелы."""
-    text = (text or "").lower().replace("ё", "е")
+    text = (text or "").replace("ё", "е").replace("Ё", "Е")
+    # опечатки РП/КТП: слипшиеся слова («Ремонтэлектрических») — режем по границе регистра
+    text = re.sub(r"(?<=[а-я])(?=[А-ЯЁ])", " ", text)
+    text = text.lower()
     text = re.sub(r"[^0-9a-zа-я]+", " ", text)
     return re.sub(r"\s+", " ", text).strip()
+
+
+def squash(text: str) -> str:
+    """norm() без пробелов: ловит опечатки-склейки РП/КТП."""
+    return norm(text).replace(" ", "")
 
 
 def significant(text: str) -> set[str]:
@@ -174,8 +182,8 @@ def parse_rp(path: Path, mdk_code: str = "02.01", pm_code: str = "02") -> dict:
     other_topics: list[dict] = []
     current_topic = None
     in_practice = False
-    current_mdk = None
-    current_mdk_code = ""
+    current_mdk = "main"
+    current_mdk_code = mdk_code
     for row in content.rows:
         texts = [t for t in row_texts(row) if t]
         if not texts:
@@ -186,10 +194,24 @@ def parse_rp(path: Path, mdk_code: str = "02.01", pm_code: str = "02") -> dict:
             current_mdk = "main" if current_mdk_code == mdk_code else "other"
             current_topic = None
             continue
+        if current_topic is not None and re.match(r"Практическ\w*\s+занятие\s*№", texts[0]):
+            m_row = re.match(r"Практическ\w*\s+занятие\s*№\s*(\d+)\s*(.*)", texts[0])
+            current_topic["practical"].append(
+                {"num": m_row.group(1), "name": m_row.group(2).strip() or texts[0]}
+            )
+            in_practice = True
+            continue
         if texts[0].startswith("Тема"):
-            current_topic = {"name": texts[0], "theory": [], "practical": [], "mdk": current_mdk_code}
-            (topics if current_mdk == "main" else other_topics).append(current_topic)
-            in_practice = False
+            name = texts[0]
+            if not (current_topic and norm(current_topic["name"]) == norm(name)):
+                current_topic = {"name": name, "theory": [], "practical": [], "mdk": current_mdk_code}
+                (topics if current_mdk == "main" else other_topics).append(current_topic)
+                in_practice = False
+            # формат РП ПМ.05: тема в кол.1, работа — в кол.2 той же строки
+            if len(texts) > 1:
+                m_row = re.match(r"Практическ\w*\s+занятие\s*№\s*(\d+)\s*(.*)", texts[1])
+                if m_row:
+                    current_topic["practical"].append({"num": m_row.group(1), "name": m_row.group(2).strip() or texts[1]})
             continue
         if current_topic is None:
             continue
@@ -388,7 +410,7 @@ def main() -> None:
     works_flat = flat(works)
     required_topics = [t["name"] for t in rp["topics"] if t["practical"]]
     skipped_topics = [t["name"] for t in rp["topics"] if not t["practical"]]
-    missing_topics = [name for name in required_topics if norm(name) not in norm(works_flat)]
+    missing_topics = [name for name in required_topics if squash(name) not in squash(works_flat)]
     if missing_topics:
         report.add(
             FAIL,
@@ -406,7 +428,7 @@ def main() -> None:
         row[0][0] for row in works[1:]
         if row and row[0] and not row[0][0].startswith(("МДК", "Вид контроля"))
     ]
-    extra_topics = [d for d in doc_topics if not any(similar(d, name) >= 0.85 for name in rp_names)]
+    extra_topics = [d for d in doc_topics if not any(similar(d, name) >= 0.85 or squash(d) == squash(name) for name in rp_names)]
     if extra_topics:
         report.add(WARN, f"Перечень работ: темы, которых нет в РП ({len(extra_topics)})", "; ".join(e[:60] for e in extra_topics))
 
@@ -583,6 +605,12 @@ def main() -> None:
                     hit = len(words & significant(f"{text_} {name}"))
                     if hit > best_hit:
                         best_topic, best_hit = name, hit
+                if best_hit < 2:
+                    for name, text_ in chunks:
+                        sq_name = squash(name)
+                        if sq_name and (sq_name in squash(question) or squash(question) in sq_name):
+                            best_topic, best_hit = name, 2
+                            break
                 if best_hit >= 2:
                     covered.add(best_topic)
                 else:
