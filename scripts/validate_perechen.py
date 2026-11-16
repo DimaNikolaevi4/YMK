@@ -92,13 +92,13 @@ def table_rows(table) -> list[list[list[str]]]:
     return result
 
 
-def parse_rp(path: Path) -> dict:
+def parse_rp(path: Path, mdk_code: str = "02.01", pm_code: str = "02") -> dict:
     doc = Document(path)
     paragraphs = [re.sub(r"\s+", " ", p.text).strip() for p in doc.paragraphs]
 
     pm_name = ""
     for text in paragraphs:
-        if re.match(r"^ПМ[.\s]?02\b", text) and len(text) > len(pm_name):
+        if re.match(rf"^ПМ[.\s]?{pm_code}\b", text) and len(text) > len(pm_name):
             pm_name = text
 
     profession = ""
@@ -108,7 +108,8 @@ def parse_rp(path: Path) -> dict:
             break
 
     # «Элементы модуля»: № | МДК.02.01. Наименование | Форма аттестации
-    mdk_code, mdk_name, attestation = "", "", ""
+    want_mdk = mdk_code
+    found_code, mdk_name, attestation = "", "", ""
     has_module_exam = False
     for table in doc.tables:
         for row in table.rows:
@@ -116,11 +117,11 @@ def parse_rp(path: Path) -> dict:
             joined = " ".join(cells).lower()
             if "экзамен" in joined and "модул" in joined:
                 has_module_exam = True
-            if not mdk_code and len(cells) >= 3 and re.match(r"МДК[.\s]*02\.01", cells[1]):
-                mdk_code = "МДК 02.01"
-                mdk_name = re.sub(r"^МДК[.\s]*02\.01[.\s]*", "", cells[1]).strip()
+            if not found_code and len(cells) >= 3 and re.match(rf"МДК[.\s]*{re.escape(want_mdk)}", cells[1]):
+                found_code = want_mdk
+                mdk_name = re.sub(rf"^МДК[.\s]*{re.escape(want_mdk)}[.\s]*", "", cells[1]).strip()
                 attestation = cells[2].strip()
-        if mdk_code and has_module_exam:
+        if found_code and has_module_exam:
             break
 
     requirements = {"practice_obligatory": [], "skills_obligatory": [], "knowledge_obligatory": []}
@@ -150,7 +151,7 @@ def parse_rp(path: Path) -> dict:
                 continue
             for row in table.rows[1:]:
                 cells = row_texts(row)
-                if not cells or not cells[0].startswith("ПК 2."):
+                if not cells or not cells[0].startswith(f"ПК {pm_code[0]}."):
                     continue
                 if len(cells) > 1:
                     requirements["skills_obligatory"] += split_sentences(cells[1])
@@ -182,7 +183,7 @@ def parse_rp(path: Path) -> dict:
         if texts[0].startswith("МДК"):
             code_match = re.search(r"МДК\s*(\d{2}\.\d{2})", texts[0])
             current_mdk_code = code_match.group(1) if code_match else ""
-            current_mdk = "main" if current_mdk_code == "02.01" else "other"
+            current_mdk = "main" if current_mdk_code == mdk_code else "other"
             current_topic = None
             continue
         if texts[0].startswith("Тема"):
@@ -208,7 +209,7 @@ def parse_rp(path: Path) -> dict:
     return {
         "pm_name": pm_name,
         "profession": profession,
-        "mdk_code": mdk_code,
+        "mdk_code": f"МДК {found_code}" if found_code else "",
         "mdk_name": mdk_name,
         "attestation": attestation,
         "requirements": requirements,
@@ -312,10 +313,12 @@ def main() -> None:
     parser.add_argument("--rp", required=True)
     parser.add_argument("--ktp")
     parser.add_argument("--all-mdk", action="store_true", help="документ по модулю: все МДК РП считаются основными")
+    parser.add_argument("--mdk", default="02.01", help="код МДК без слова МДК, по умолчанию 02.01")
+    parser.add_argument("--pm", default="02", help="номер ПМ (02, 03 …), по умолчанию 02")
     args = parser.parse_args()
 
     doc = parse_docx(Path(args.docx))
-    rp = parse_rp(Path(args.rp))
+    rp = parse_rp(Path(args.rp), args.mdk, args.pm)
     if args.all_mdk:
         rp["topics"] = rp["topics"] + rp["other_topics"]
         rp["other_topics"] = []
@@ -337,13 +340,14 @@ def main() -> None:
     else:
         report.add(FAIL, "Титул: наименование МДК/ПМ не совпадает с РП", f"в РП: {rp['mdk_name']!r}")
 
-    if "пм 02" in norm(title_zone):
+    pm_label = f"пм {args.pm}"
+    if pm_label in norm(title_zone):
         if rp["pm_name"] and norm(rp["pm_name"]) in norm(title_zone):
             report.add(PASS, "Титул: наименование ПМ совпадает с РП")
         else:
-            report.add(PASS, "Титул: шифр ПМ 02 указан")
+            report.add(PASS, f"Титул: шифр ПМ {args.pm} указан")
     else:
-        report.add(FAIL, "Титул: шифр ПМ 02 не найден")
+        report.add(FAIL, f"Титул: шифр ПМ {args.pm} не найден")
 
     prof_code = re.search(r"\b(\d{2}\.\d{2}\.\d{2})\b", rp["profession"] or "")
     if prof_code and prof_code.group(1) in title_zone:
