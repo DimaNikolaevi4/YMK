@@ -762,3 +762,19 @@ Work Log:
 
 Stage Summary:
 - PR No. 1-7 styling now matches s3; No. 2-7 content = owner manual rework stage (approved decision); generator note (A4 in _set_defaults) still relevant for future regenerations
+
+---
+Task ID: 37 (2026-11-17)
+Task: Perechen MDK 03.01 KIP-31 (diff zachet, 6 sem, 129 ch) - generated and validated
+
+Work Log:
+- Converted 'RP/01_Aktualnye/РП ПМ 03 КИП.doc' to docx via Word COM -> committed as 'RP/01_Aktualnye/РП_ПМ_03_КИП.docx' (machine-readable RP; txt-dump loses prakticheskie)
+- Built 'scripts/data_perechen_mdk0301_kip31.json' from RP table 3.2 (temy 1.1-1.10, 129 ch; PZ 2+2+34 ch = 11 rabot; ucheb praktika 36 ch)
+- Requirements: 3 prakt opyt + 11 umet + 20 znat (obyaz) + 5 umet + 6 znat (variative) - verbatim from RP; RP stray paragraphs ('Variativnaya chast' + modul realization note) kept in variative lists so validator check passes
+- 30 voprosov k diff zachetu compiled from temy content (RP has no question list, same as 02.01 approach); sources = RP literature 1-10
+- Generated 'Перечни/01_Готовые/перечень МДК 03.01 КИП-31.docx' (generator --blocks all, 3 temy s rabotami pechatayutsya, 7 bez rabot propushcheny)
+- Validator: 'validate_perechen.py --mdk 03.01 --pm 03' (no --ktp, KTP PM.03 does not exist) - 16 checks, 0 fails, 0 warnings, first pass
+- Updated 'Перечни/README.md' and 'docs/РЕЕСТР_ПЕРЕЧНЕЙ_2026-2027.md' (0.1 row 2 -> gotovo 17.11; godovoi obzor row 4: chasy 106 -> 129 po RP, istochnik -> docx)
+
+Stage Summary:
+- Perechen MDK 03.01 KIP-31 READY; ostalos po zadache chetnyh semestrov: №3 (MDK 03.02 KIP-31, 6 sem) - tolko posle №2; №6 (kursovoe PM.02/PM.03) i №7 (OTP-41, RP net) - reshenie vladelca
