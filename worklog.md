@@ -778,3 +778,20 @@ Work Log:
 
 Stage Summary:
 - Perechen MDK 03.01 KIP-31 READY; ostalos po zadache chetnyh semestrov: №3 (MDK 03.02 KIP-31, 6 sem) - tolko posle №2; №6 (kursovoe PM.02/PM.03) i №7 (OTP-41, RP net) - reshenie vladelca
+
+---
+Task ID: 38 (2026-11-17)
+Task: Perechen MDK 03.02 KIP-31 (diff zachet, 6 sem, 140 ch) - generated and validated
+
+Work Log:
+- Reuse of machine-readable RP 'RP/01_Aktualnye/RP_PM_03_KIP.docx' (converted in task 37); recon: parse_rp gives 5 temy (2.1-2.5), 39 prakticheskih with RP continuous numbering No.1-39, attestation 'Differencirovannyj zachet', requirements 3/16/31 (module-level, identical to 03.01)
+- Built 'scripts/data_perechen_mdk0302_kip31.json': temy 2.1 (10 PZ), 2.2 (9 PZ No.11-19), 2.5 (20 PZ No.20-39); temy 2.3, 2.4 without works - not printed (validator confirms); control: DZ, 'Temy 2.1 - 2.5', 140 ch (RP: 2.1=20+20, 2.2=28+18, 2.3=4, 2.4=6, 2.5=4+40)
+- Requirements block copied verbatim from data_perechen_mdk0301_kip31.json (module-level RP text, 50 items incl. 'Variativnaya chast' + module realization note)
+- RP typo in MDK title 'kotrollera' (Progammirovanie kotrollera...) kept verbatim: validator check 1 compares title letter-by-letter with RP; typo reported to owner for RP correction
+- 30 voprosov compiled from temy content with margin vs foreign topics (1.10 has TRACE MODE/MasterSCADA/Modbus overlap, 3.12 relay-contact): each question 5-14 significant hits on own topics, other-hit always lower; all 5 temy covered (incl. theory-only 2.3, 2.4)
+- Generated 'Perechni/01_Gotovye/perechen MDK 03.02 KIP-31.docx' (generator --blocks all, 3 temy pechatayutsya, 2 propushcheny)
+- Validator: '--mdk 03.02 --pm 03' (no --ktp) - 16 checks, 0 fails, 0 warnings, first pass
+- Updated 'Perechni/README.md' (new row + status note) and 'docs/REESTR_PERECHNEJ_2026-2027.md' (0.1 row 3 -> gotovo 17.11; header date -> 17.11; godovoj obzor row 5: chasy 120 -> 140 po RP, istochnik -> docx)
+
+Stage Summary:
+- Perechen MDK 03.02 KIP-31 READY; vse tri zadachi chetnyh semestrov po KIP-31 (02.01, 03.01, 03.02) zakryty; ostalos: PA.03 ekzamen bilety (otdelnaya zadacha, p.4 reestra), kursovoe PM.02/PM.03 i OTP-41 - reshenie vladelca
