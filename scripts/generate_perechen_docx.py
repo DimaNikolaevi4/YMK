@@ -273,6 +273,8 @@ def build_title(doc: Document, data: dict) -> None:
 
     if meta.get("course"):
         add_par(doc, f"курс: {meta['course']} курс", 12, align=None)
+    if meta.get("semester"):
+        add_par(doc, f"семестр: {meta['semester']}", 12, align=None)
     add_par(doc, f"Группа: {', '.join(meta['groups'])}", 12, align=None)
     add_par(doc, f"Преподаватель: {', '.join(meta['teachers'])}", 12, align=None)
     add_empty(doc, 3)

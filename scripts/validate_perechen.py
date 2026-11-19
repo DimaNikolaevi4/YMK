@@ -337,6 +337,10 @@ def main() -> None:
     parser.add_argument("--all-mdk", action="store_true", help="документ по модулю: все МДК РП считаются основными")
     parser.add_argument("--mdk", default="02.01", help="код МДК без слова МДК, по умолчанию 02.01")
     parser.add_argument("--pm", default="02", help="номер ПМ (02, 03 …), по умолчанию 02")
+    parser.add_argument(
+        "--education-code",
+        help="код специальности/профессии по УП, если он отличается от кода в РП (например, ОТП-41)",
+    )
     args = parser.parse_args()
 
     doc = parse_docx(Path(args.docx))
@@ -372,15 +376,19 @@ def main() -> None:
         report.add(FAIL, f"Титул: шифр ПМ {args.pm} не найден")
 
     prof_code = re.search(r"\b(\d{2}\.\d{2}\.\d{2})\b", rp["profession"] or "")
-    if prof_code and prof_code.group(1) in title_zone:
-        report.add(PASS, "Титул: профессия совпадает с РП", prof_code.group(1))
+    expected_code = args.education_code or (prof_code.group(1) if prof_code else None)
+    if expected_code and expected_code in title_zone:
+        report.add(PASS, "Титул: код специальности/профессии совпадает с ожидаемым", expected_code)
     else:
-        report.add(FAIL, "Титул: профессия не найдена", rp["profession"][:70])
+        report.add(FAIL, "Титул: код специальности/профессии не найден", expected_code or rp["profession"][:70])
 
-    if "2026 2027" in norm(title_zone) and "2026" in title_zone:
+    if ("2026 2027" in norm(title_zone)
+            and "2026 г." in title_zone
+            and "2027 г." not in title_zone):
         report.add(PASS, "Титул: учебный год 2026-2027 и год 2026")
     else:
-        report.add(FAIL, "Титул: учебный год / год не совпадают")
+        report.add(FAIL, "Титул: учебный год / год не совпадают",
+                   "год утверждения должен быть 2026, учебный год — 2026-2027")
 
     # 2. форма аттестации и номер занятия
     control_flat = flat(control)
